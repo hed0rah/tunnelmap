@@ -1,0 +1,23 @@
+# macOS / windows / linux junk
+.DS_Store
+Thumbs.db
+*.swp
+
+# editor / ide
+.vscode/
+.idea/
+*.iml
+
+# node (in case we ever add a build step)
+node_modules/
+dist/
+build/
+.cache/
+
+# local generated maps the user doesn't want to commit
+local_*.json
+local_*.svg
+scratch/
+
+# one-shot ship helpers
+SHIP.sh

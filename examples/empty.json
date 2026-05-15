@@ -1,0 +1,10 @@
+{
+  "planes": [
+    { "name": "Surface",   "z": 0 },
+    { "name": "Mid Level", "z": 210 },
+    { "name": "Sky Lines", "z": 420 }
+  ],
+  "lines": [],
+  "stations": [],
+  "lifts": []
+}

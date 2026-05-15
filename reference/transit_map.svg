@@ -1,0 +1,251 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-678.2 -688.0 1206.6 837.0" width="1500" font-family="Inter, Helvetica, Arial, sans-serif">
+<defs><style><![CDATA[
+:root {
+    --paper: #faf8f3;
+    --plane-1: #f0eadf;
+    --plane-2: #ece5d6;
+    --plane-3: #e8e0cd;
+    --plane-stroke: #cdbf9c;
+    --plane-label: #6e5d36;
+    --station-fill: #ffffff;
+    --station-stroke: #111111;
+    --label-text: #1a1a1a;
+    --leader: #777777;
+    --lift: #3a3a3a;
+    --line-vco: #d62828;
+    --line-vcf: #1565c0;
+    --line-vca: #2e7d32;
+    --line-bus: #5d4037;
+    --line-lfo: #f9a825;
+    --line-eg: #c2185b;
+    --line-mix: #00838f;
+    --line-trk: #37474f;
+    --line-smp: #6a1b9a;
+    --line-seq: #ef6c00;
+    --line-brn: #558b2f;
+}
+]]></style></defs>
+<rect x="-678.2" y="-688.0" width="1206.6" height="837.0" fill="var(--paper, #faf8f3)"/>
+<polygon points="-119.5,-345.0 597.6,69.0 79.7,368.0 -637.4,-46.0" fill="#f0eadf" stroke="#cdbf9c" stroke-width="0.6" opacity="0.6"/>
+<text x="-135.5" y="-339.0" font-size="13" font-weight="600" fill="#6e5d36" text-anchor="end" letter-spacing="1.4">SURFACE</text>
+<polygon points="-119.5,-555.0 597.6,-141.0 79.7,158.0 -637.4,-256.0" fill="#ece5d6" stroke="#cdbf9c" stroke-width="0.6" opacity="0.6"/>
+<text x="-135.5" y="-549.0" font-size="13" font-weight="600" fill="#6e5d36" text-anchor="end" letter-spacing="1.4">MID LEVEL</text>
+<polygon points="-119.5,-765.0 597.6,-351.0 79.7,-52.0 -637.4,-466.0" fill="#e8e0cd" stroke="#cdbf9c" stroke-width="0.6" opacity="0.6"/>
+<text x="-135.5" y="-759.0" font-size="13" font-weight="600" fill="#6e5d36" text-anchor="end" letter-spacing="1.4">SKY LINES</text>
+<line x1="278.9" y1="-23.0" x2="159.3" y2="-210.0" stroke="#3a3a3a" stroke-width="2.4" stroke-dasharray="3.5,3" stroke-linecap="round"/>
+<line x1="-119.5" y1="-69.0" x2="-39.8" y2="-233.0" stroke="#3a3a3a" stroke-width="2.4" stroke-dasharray="3.5,3" stroke-linecap="round"/>
+<line x1="-39.8" y1="-233.0" x2="-159.3" y2="-466.0" stroke="#3a3a3a" stroke-width="2.4" stroke-dasharray="3.5,3" stroke-linecap="round"/>
+<line x1="159.3" y1="-118.0" x2="79.7" y2="-328.0" stroke="#3a3a3a" stroke-width="2.4" stroke-dasharray="3.5,3" stroke-linecap="round"/>
+<line x1="-79.7" y1="-72.0" x2="-39.8" y2="-259.0" stroke="#3a3a3a" stroke-width="2.4" stroke-dasharray="3.5,3" stroke-linecap="round"/>
+<polyline points="-119.5,-253.0 -37.8,-208.1 41.8,-162.1 398.4,46.0" fill="none" stroke="#d62828" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="79.7,-184.0 41.8,-159.8 -197.2,-21.9 -318.7,46.0" fill="none" stroke="#1565c0" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="-438.2,-23.0 -199.2,-23.0 119.5,-23.0 278.9,69.0" fill="none" stroke="#2e7d32" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="-43.8,-204.7 35.9,-161.0 -201.2,-24.1 -199.2,69.0" fill="none" stroke="#5d4037" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="-159.3,-394.0 -37.8,-326.1 161.3,-211.2 318.7,-118.0" fill="none" stroke="#f9a825" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="239.0,-256.0 161.3,-208.8 -77.7,-70.9 -119.5,-49.0" fill="none" stroke="#c2185b" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="-358.5,-233.0 -39.8,-233.0 159.3,-118.0" fill="none" stroke="#00838f" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="-43.8,-322.7 155.4,-210.0 -83.7,-74.3" fill="none" stroke="#37474f" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="-159.3,-558.0 2.0,-467.1 161.3,-375.2 239.0,-328.0" fill="none" stroke="#6a1b9a" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="-278.9,-397.0 -159.3,-466.0 79.7,-328.0 -39.8,-259.0" fill="none" stroke="#ef6c00" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="-4.0,-463.7 157.4,-372.9 79.7,-328.0" fill="none" stroke="#558b2f" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="-119.5" y1="-253.0" x2="-131.8" y2="-259.7" stroke="#d62828" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="-165.6" y="-264.1" width="36" height="17" rx="8.5" fill="#d62828"/>
+<text x="-147.6" y="-251.6" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">VCO</text>
+<line x1="398.4" y1="46.0" x2="410.5" y2="53.1" stroke="#d62828" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="408.0" y="48.8" width="36" height="17" rx="8.5" fill="#d62828"/>
+<text x="426.0" y="61.3" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">VCO</text>
+<line x1="79.7" y1="-184.0" x2="91.5" y2="-191.5" stroke="#1565c0" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="88.6" y="-195.5" width="36" height="17" rx="8.5" fill="#1565c0"/>
+<text x="106.6" y="-183.0" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">VCF</text>
+<line x1="-318.7" y1="46.0" x2="-330.9" y2="52.8" stroke="#1565c0" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="-364.6" y="48.5" width="36" height="17" rx="8.5" fill="#1565c0"/>
+<text x="-346.6" y="61.0" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">VCF</text>
+<line x1="-438.2" y1="-23.0" x2="-452.2" y2="-23.0" stroke="#2e7d32" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="-488.2" y="-31.5" width="36" height="17" rx="8.5" fill="#2e7d32"/>
+<text x="-470.2" y="-19.0" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">VCA</text>
+<line x1="278.9" y1="69.0" x2="291.0" y2="76.0" stroke="#2e7d32" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="288.6" y="71.7" width="36" height="17" rx="8.5" fill="#2e7d32"/>
+<text x="306.6" y="84.2" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">VCA</text>
+<line x1="-43.8" y1="-204.7" x2="-56.1" y2="-211.4" stroke="#5d4037" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="-89.9" y="-215.8" width="36" height="17" rx="8.5" fill="#5d4037"/>
+<text x="-71.9" y="-203.3" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">BUS</text>
+<line x1="-199.2" y1="69.0" x2="-198.9" y2="83.0" stroke="#5d4037" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="-216.5" y="83.0" width="36" height="17" rx="8.5" fill="#5d4037"/>
+<text x="-198.5" y="95.5" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">BUS</text>
+<line x1="-159.3" y1="-394.0" x2="-171.6" y2="-400.8" stroke="#f9a825" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="-205.3" y="-405.2" width="36" height="17" rx="8.5" fill="#f9a825"/>
+<text x="-187.3" y="-392.7" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">LFO</text>
+<line x1="318.7" y1="-118.0" x2="330.7" y2="-110.9" stroke="#f9a825" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="328.2" y="-115.0" width="36" height="17" rx="8.5" fill="#f9a825"/>
+<text x="346.2" y="-102.5" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">LFO</text>
+<line x1="239.0" y1="-256.0" x2="251.0" y2="-263.3" stroke="#c2185b" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="248.4" y="-267.4" width="36" height="17" rx="8.5" fill="#c2185b"/>
+<text x="266.4" y="-254.9" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">EG</text>
+<line x1="-119.5" y1="-49.0" x2="-131.9" y2="-42.5" stroke="#c2185b" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="-165.9" y="-47.1" width="36" height="17" rx="8.5" fill="#c2185b"/>
+<text x="-147.9" y="-34.6" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">EG</text>
+<line x1="-358.5" y1="-233.0" x2="-372.5" y2="-233.0" stroke="#00838f" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="-408.5" y="-241.5" width="36" height="17" rx="8.5" fill="#00838f"/>
+<text x="-390.5" y="-229.0" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">MIX</text>
+<line x1="159.3" y1="-118.0" x2="171.5" y2="-111.0" stroke="#00838f" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="169.1" y="-115.3" width="36" height="17" rx="8.5" fill="#00838f"/>
+<text x="187.1" y="-102.8" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">MIX</text>
+<line x1="-43.8" y1="-322.7" x2="-56.0" y2="-329.6" stroke="#37474f" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="-89.7" y="-333.9" width="36" height="17" rx="8.5" fill="#37474f"/>
+<text x="-71.7" y="-321.4" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">TRK</text>
+<line x1="-83.7" y1="-74.3" x2="-95.8" y2="-67.4" stroke="#37474f" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="-129.5" y="-71.7" width="36" height="17" rx="8.5" fill="#37474f"/>
+<text x="-111.5" y="-59.2" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">TRK</text>
+<line x1="-159.3" y1="-558.0" x2="-171.5" y2="-564.9" stroke="#6a1b9a" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="-205.2" y="-569.2" width="36" height="17" rx="8.5" fill="#6a1b9a"/>
+<text x="-187.2" y="-556.7" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">SMP</text>
+<line x1="239.0" y1="-328.0" x2="251.0" y2="-320.7" stroke="#6a1b9a" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="248.4" y="-324.8" width="36" height="17" rx="8.5" fill="#6a1b9a"/>
+<text x="266.4" y="-312.3" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">SMP</text>
+<line x1="-278.9" y1="-397.0" x2="-291.0" y2="-390.0" stroke="#ef6c00" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="-324.6" y="-394.2" width="36" height="17" rx="8.5" fill="#ef6c00"/>
+<text x="-306.6" y="-381.8" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">SEQ</text>
+<line x1="-39.8" y1="-259.0" x2="-52.0" y2="-252.0" stroke="#ef6c00" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="-85.5" y="-256.2" width="36" height="17" rx="8.5" fill="#ef6c00"/>
+<text x="-67.5" y="-243.8" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">SEQ</text>
+<line x1="-4.0" y1="-463.7" x2="-16.2" y2="-470.6" stroke="#558b2f" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="-49.9" y="-474.9" width="36" height="17" rx="8.5" fill="#558b2f"/>
+<text x="-31.9" y="-462.4" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">BRN</text>
+<line x1="79.7" y1="-328.0" x2="67.5" y2="-321.0" stroke="#558b2f" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="34.0" y="-325.2" width="36" height="17" rx="8.5" fill="#558b2f"/>
+<text x="52.0" y="-312.8" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1.4">BRN</text>
+<circle cx="-119.5" cy="-253.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="-107.5" y="-261.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">VCO West</text>
+<circle cx="-39.8" cy="-207.0" r="5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="1.6"/>
+<line x1="-45.7" y1="-205.5" x2="-60.0" y2="-202.0" stroke="var(--leader, #777)" stroke-width="0.7" stroke-linecap="round" opacity="0.85"/>
+<text x="-63.8" y="-201.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="end" font-weight="500">Pulse Park</text>
+<g transform="translate(39.8,-161.0) rotate(120.0)"><rect x="-13.1" y="-10.0" width="26.2" height="20.0" rx="10.0" fill="#fff" stroke="#111" stroke-width="2.4"/></g>
+<circle cx="42.1" cy="-165.0" r="3.57" fill="var(--station-stroke, #111)"/>
+<circle cx="37.5" cy="-157.0" r="3.57" fill="var(--station-stroke, #111)"/>
+<line x1="30.6" y1="-158.7" x2="19.7" y2="-156.0" stroke="var(--leader, #777)" stroke-width="0.7" stroke-linecap="round" opacity="0.85"/>
+<text x="15.8" y="-155.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="end" font-weight="500">Filter Junction</text>
+<circle cx="278.9" cy="-23.0" r="10.0" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2.4"/>
+<circle cx="278.9" cy="-23.0" r="3.825" fill="var(--station-stroke, #111)"/>
+<text x="290.9" y="-31.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Patch Bay</text>
+<circle cx="398.4" cy="46.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="410.4" y="38.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">VCO East</text>
+<circle cx="79.7" cy="-184.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="79.7" y="-198.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="middle" font-weight="500">VCF North</text>
+<circle cx="-119.5" cy="-69.0" r="10.0" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2.4"/>
+<circle cx="-119.5" cy="-69.0" r="3.825" fill="var(--station-stroke, #111)"/>
+<text x="-131.5" y="-77.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="end" font-weight="500">Low Cut</text>
+<g transform="translate(-199.2,-23.0) rotate(-120.0)"><rect x="-13.1" y="-10.0" width="26.2" height="20.0" rx="10.0" fill="#fff" stroke="#111" stroke-width="2.4"/></g>
+<circle cx="-196.9" cy="-19.0" r="3.57" fill="var(--station-stroke, #111)"/>
+<circle cx="-201.5" cy="-27.0" r="3.57" fill="var(--station-stroke, #111)"/>
+<text x="-211.2" y="-31.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="end" font-weight="500">Bass Bin</text>
+<circle cx="-318.7" cy="46.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="-330.7" y="38.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="end" font-weight="500">VCF South</text>
+<circle cx="-199.2" cy="69.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="-187.2" y="61.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Bus Yard</text>
+<circle cx="-438.2" cy="-23.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="-426.2" y="-31.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">VCA Far</text>
+<circle cx="119.5" cy="-23.0" r="5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="1.6"/>
+<text x="131.5" y="-31.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Modulator</text>
+<circle cx="278.9" cy="69.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="290.9" y="61.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">VCA East</text>
+<circle cx="-159.3" cy="-394.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="-171.3" y="-402.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="end" font-weight="500">LFO West</text>
+<g transform="translate(-39.8,-325.0) rotate(120.0)"><rect x="-13.1" y="-10.0" width="26.2" height="20.0" rx="10.0" fill="#fff" stroke="#111" stroke-width="2.4"/></g>
+<circle cx="-37.5" cy="-329.0" r="3.57" fill="var(--station-stroke, #111)"/>
+<circle cx="-42.1" cy="-321.0" r="3.57" fill="var(--station-stroke, #111)"/>
+<text x="-27.8" y="-333.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Trunk West</text>
+<g transform="translate(159.3,-210.0) rotate(120.0)"><rect x="-13.1" y="-10.0" width="26.2" height="20.0" rx="10.0" fill="#fff" stroke="#111" stroke-width="2.4"/></g>
+<circle cx="161.6" cy="-214.0" r="3.57" fill="var(--station-stroke, #111)"/>
+<circle cx="157.0" cy="-206.0" r="3.57" fill="var(--station-stroke, #111)"/>
+<line x1="168.6" y1="-207.7" x2="179.5" y2="-205.0" stroke="var(--leader, #777)" stroke-width="0.7" stroke-linecap="round" opacity="0.85"/>
+<text x="183.3" y="-204.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Triangle Plaza</text>
+<circle cx="318.7" cy="-118.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="330.7" y="-126.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">LFO East</text>
+<circle cx="239.0" cy="-256.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="251.0" y="-264.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">EG North</text>
+<circle cx="39.8" cy="-141.0" r="10.0" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2.4"/>
+<circle cx="39.8" cy="-141.0" r="3.825" fill="var(--station-stroke, #111)"/>
+<line x1="45.5" y1="-133.4" x2="55.4" y2="-120.2" stroke="var(--leader, #777)" stroke-width="0.7" stroke-linecap="round" opacity="0.85"/>
+<text x="57.8" y="-117.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Attack</text>
+<circle cx="-39.8" cy="-95.0" r="10.0" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2.4"/>
+<circle cx="-39.8" cy="-95.0" r="3.825" fill="var(--station-stroke, #111)"/>
+<text x="-27.8" y="-79.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Decay</text>
+<circle cx="-79.7" cy="-72.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="-67.7" y="-56.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Trunk End</text>
+<circle cx="-119.5" cy="-49.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="-107.5" y="-33.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">EG South</text>
+<circle cx="-358.5" cy="-233.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="-346.5" y="-241.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Mixer West</text>
+<circle cx="-39.8" cy="-233.0" r="5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="1.6"/>
+<line x1="-34.0" y1="-231.5" x2="-19.7" y2="-228.0" stroke="var(--leader, #777)" stroke-width="0.7" stroke-linecap="round" opacity="0.85"/>
+<text x="-15.8" y="-227.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Bus Cross</text>
+<circle cx="159.3" cy="-118.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<line x1="154.8" y1="-112.0" x2="136.5" y2="-87.6" stroke="var(--leader, #777)" stroke-width="0.7" stroke-linecap="round" opacity="0.85"/>
+<text x="134.1" y="-84.4" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="end" font-weight="500">Mix Junction</text>
+<circle cx="-159.3" cy="-558.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="-147.3" y="-566.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Sampler West</text>
+<g transform="translate(0.0,-466.0) rotate(120.0)"><rect x="-13.1" y="-10.0" width="26.2" height="20.0" rx="10.0" fill="#fff" stroke="#111" stroke-width="2.4"/></g>
+<circle cx="2.3" cy="-470.0" r="3.57" fill="var(--station-stroke, #111)"/>
+<circle cx="-2.3" cy="-462.0" r="3.57" fill="var(--station-stroke, #111)"/>
+<text x="12.0" y="-474.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Loop Point</text>
+<g transform="translate(159.3,-374.0) rotate(120.0)"><rect x="-13.1" y="-10.0" width="26.2" height="20.0" rx="10.0" fill="#fff" stroke="#111" stroke-width="2.4"/></g>
+<circle cx="161.6" cy="-378.0" r="3.57" fill="var(--station-stroke, #111)"/>
+<circle cx="157.0" cy="-370.0" r="3.57" fill="var(--station-stroke, #111)"/>
+<text x="171.3" y="-382.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Branch Junction</text>
+<circle cx="239.0" cy="-328.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="251.0" y="-336.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Sampler East</text>
+<circle cx="-278.9" cy="-397.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="-290.9" y="-405.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="end" font-weight="500">Step One</text>
+<circle cx="-159.3" cy="-466.0" r="4.25" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="1.4"/>
+<text x="-147.3" y="-474.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Gate West</text>
+<circle cx="79.7" cy="-328.0" r="10.0" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2.4"/>
+<circle cx="79.7" cy="-328.0" r="3.825" fill="var(--station-stroke, #111)"/>
+<text x="91.7" y="-312.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Gate East</text>
+<circle cx="-39.8" cy="-259.0" r="6.5" fill="var(--station-fill, #fff)" stroke="var(--station-stroke, #111)" stroke-width="2"/>
+<text x="-27.8" y="-243.0" font-size="10.5" fill="var(--label-text, #1a1a1a)" text-anchor="start" font-weight="500">Step Eight</text>
+<text x="-648.2" y="-628.0" font-size="34" font-weight="700" fill="#111" letter-spacing="-0.5">Synth City Transit</text>
+<text x="-648.2" y="-602.0" font-size="12" fill="#555">Eleven lines across three isometric planes. octolinear, parallel corridors, stadium interchanges, auto subdivided waypoints, css theme variables.</text>
+<text x="-648.2" y="-558.0" font-size="11" font-weight="600" fill="#333" letter-spacing="1.4">LINES</text>
+<line x1="-648.2" y1="-536.0" x2="-620.2" y2="-536.0" stroke="#d62828" stroke-width="5" stroke-linecap="round"/>
+<text x="-610.2" y="-532.0" font-size="11" fill="#222">VCO</text>
+<line x1="-648.2" y1="-518.0" x2="-620.2" y2="-518.0" stroke="#1565c0" stroke-width="5" stroke-linecap="round"/>
+<text x="-610.2" y="-514.0" font-size="11" fill="#222">VCF</text>
+<line x1="-648.2" y1="-500.0" x2="-620.2" y2="-500.0" stroke="#2e7d32" stroke-width="5" stroke-linecap="round"/>
+<text x="-610.2" y="-496.0" font-size="11" fill="#222">VCA</text>
+<line x1="-648.2" y1="-482.0" x2="-620.2" y2="-482.0" stroke="#5d4037" stroke-width="5" stroke-linecap="round"/>
+<text x="-610.2" y="-478.0" font-size="11" fill="#222">BUS</text>
+<line x1="-648.2" y1="-464.0" x2="-620.2" y2="-464.0" stroke="#f9a825" stroke-width="5" stroke-linecap="round"/>
+<text x="-610.2" y="-460.0" font-size="11" fill="#222">LFO</text>
+<line x1="-648.2" y1="-446.0" x2="-620.2" y2="-446.0" stroke="#c2185b" stroke-width="5" stroke-linecap="round"/>
+<text x="-610.2" y="-442.0" font-size="11" fill="#222">EG</text>
+<line x1="-648.2" y1="-428.0" x2="-620.2" y2="-428.0" stroke="#00838f" stroke-width="5" stroke-linecap="round"/>
+<text x="-610.2" y="-424.0" font-size="11" fill="#222">MIX</text>
+<line x1="-648.2" y1="-410.0" x2="-620.2" y2="-410.0" stroke="#37474f" stroke-width="5" stroke-linecap="round"/>
+<text x="-610.2" y="-406.0" font-size="11" fill="#222">TRK</text>
+<line x1="-648.2" y1="-392.0" x2="-620.2" y2="-392.0" stroke="#6a1b9a" stroke-width="5" stroke-linecap="round"/>
+<text x="-610.2" y="-388.0" font-size="11" fill="#222">SMP</text>
+<line x1="-648.2" y1="-374.0" x2="-620.2" y2="-374.0" stroke="#ef6c00" stroke-width="5" stroke-linecap="round"/>
+<text x="-610.2" y="-370.0" font-size="11" fill="#222">SEQ</text>
+<line x1="-648.2" y1="-356.0" x2="-620.2" y2="-356.0" stroke="#558b2f" stroke-width="5" stroke-linecap="round"/>
+<text x="-610.2" y="-352.0" font-size="11" fill="#222">BRN</text>
+<text x="-648.2" y="-322.0" font-size="11" font-weight="600" fill="#333" letter-spacing="1.4">TRANSFERS</text>
+<line x1="-648.2" y1="-302.0" x2="-620.2" y2="-302.0" stroke="#3a3a3a" stroke-width="2.4" stroke-dasharray="3.5,3" stroke-linecap="round"/>
+<text x="-610.2" y="-298.0" font-size="11" fill="#222">vertical lift between planes</text>
+<rect x="-644.2" y="-291.0" width="20" height="14" rx="7" fill="#fff" stroke="#111" stroke-width="2"/>
+<circle cx="-638.2" cy="-284.0" r="2.6" fill="#111"/>
+<circle cx="-630.2" cy="-284.0" r="2.6" fill="#111"/>
+<text x="-610.2" y="-280.0" font-size="11" fill="#222">stadium interchange</text>
+<circle cx="-634.2" cy="-266.0" r="6.5" fill="#fff" stroke="#111" stroke-width="2"/>
+<text x="-610.2" y="-262.0" font-size="11" fill="#222">terminus (with line tab)</text>
+<text x="398.4" y="-624.0" font-size="11" font-weight="600" fill="#333" letter-spacing="1.4" text-anchor="middle">PLANE AXES</text>
+<line x1="398.4" y1="-598.0" x2="420.9" y2="-585.0" stroke="#777" stroke-width="1.2" stroke-linecap="round"/>
+<line x1="398.4" y1="-598.0" x2="398.4" y2="-579.6" stroke="#777" stroke-width="1.2" stroke-linecap="round"/>
+<line x1="398.4" y1="-598.0" x2="375.9" y2="-585.0" stroke="#777" stroke-width="1.2" stroke-linecap="round"/>
+<line x1="398.4" y1="-598.0" x2="366.5" y2="-598.0" stroke="#777" stroke-width="1.2" stroke-linecap="round"/>
+<line x1="398.4" y1="-598.0" x2="375.9" y2="-611.0" stroke="#777" stroke-width="1.2" stroke-linecap="round"/>
+<line x1="398.4" y1="-598.0" x2="398.4" y2="-616.4" stroke="#777" stroke-width="1.2" stroke-linecap="round"/>
+<line x1="398.4" y1="-598.0" x2="420.9" y2="-611.0" stroke="#777" stroke-width="1.2" stroke-linecap="round"/>
+<line x1="398.4" y1="-598.0" x2="430.2" y2="-598.0" stroke="#777" stroke-width="1.2" stroke-linecap="round"/>
+<circle cx="398.4" cy="-598.0" r="2" fill="#333"/>
+<text x="498.4" y="127.0" font-size="10" fill="#888" text-anchor="end">transit_map.py / iso octolinear / auto subdivide / parallel corridors / stadium interchanges / annealed labels / css theme / 30 deg projection</text>
+</svg>

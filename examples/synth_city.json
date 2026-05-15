@@ -1,0 +1,64 @@
+{
+  "planes": [
+    { "name": "Surface",   "z": 0 },
+    { "name": "Mid Level", "z": 210 },
+    { "name": "Sky Lines", "z": 420 }
+  ],
+  "lines": [
+    { "id": "vco", "name": "VCO", "color": "#d62828", "waypoints": [
+      { "gx": -7, "gy": -4, "plane": 0 },
+      { "gx":  6, "gy": -4, "plane": 0 }
+    ]},
+    { "id": "vcf", "name": "VCF", "color": "#1565c0", "waypoints": [
+      { "gx": -3, "gy": -5, "plane": 0 },
+      { "gx": -3, "gy":  5, "plane": 0 }
+    ]},
+    { "id": "vca", "name": "VCA", "color": "#2e7d32", "waypoints": [
+      { "gx": -6, "gy":  5, "plane": 0 },
+      { "gx": -3, "gy":  2, "plane": 0 },
+      { "gx":  1, "gy": -2, "plane": 0 },
+      { "gx":  5, "gy": -2, "plane": 0 }
+    ]},
+    { "id": "bus", "name": "BUS", "color": "#5d4037", "waypoints": [
+      { "gx": -5, "gy": -4, "plane": 0 },
+      { "gx": -3, "gy": -4, "plane": 0 },
+      { "gx": -3, "gy":  2, "plane": 0 },
+      { "gx": -1, "gy":  4, "plane": 0 }
+    ]},
+    { "id": "lfo", "name": "LFO", "color": "#f9a825", "waypoints": [
+      { "gx": -6, "gy": -2, "plane": 1 },
+      { "gx":  6, "gy": -2, "plane": 1 }
+    ]},
+    { "id": "eg", "name": "EG", "color": "#c2185b", "waypoints": [
+      { "gx":  2, "gy": -4, "plane": 1 },
+      { "gx":  2, "gy":  5, "plane": 1 }
+    ]},
+    { "id": "mix", "name": "MIX", "color": "#00838f", "waypoints": [
+      { "gx": -5, "gy":  4, "plane": 1 },
+      { "gx": -1, "gy":  0, "plane": 1 },
+      { "gx":  4, "gy":  0, "plane": 1 }
+    ]},
+    { "id": "trk", "name": "TRK", "color": "#37474f", "waypoints": [
+      { "gx": -3, "gy": -2, "plane": 1 },
+      { "gx":  2, "gy": -2, "plane": 1 },
+      { "gx":  2, "gy":  4, "plane": 1 }
+    ]},
+    { "id": "smp", "name": "SMP", "color": "#6a1b9a", "waypoints": [
+      { "gx": -5, "gy": -1, "plane": 2 },
+      { "gx":  5, "gy": -1, "plane": 2 }
+    ]},
+    { "id": "seq", "name": "SEQ", "color": "#ef6c00", "waypoints": [
+      { "gx": -3, "gy":  4, "plane": 2 },
+      { "gx": -3, "gy":  1, "plane": 2 },
+      { "gx":  3, "gy":  1, "plane": 2 },
+      { "gx":  3, "gy":  4, "plane": 2 }
+    ]},
+    { "id": "brn", "name": "BRN", "color": "#558b2f", "waypoints": [
+      { "gx": -1, "gy": -1, "plane": 2 },
+      { "gx":  3, "gy": -1, "plane": 2 },
+      { "gx":  3, "gy":  1, "plane": 2 }
+    ]}
+  ],
+  "stations": [],
+  "lifts": []
+}

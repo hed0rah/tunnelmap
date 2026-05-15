@@ -1,0 +1,3276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TunnelMap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* theme variables. swap these via data-theme on root to repaint everything. */
+:root {
+  --paper: #faf8f3;
+  --ui-bg: #f0eadf;
+  --ui-bg-soft: #ece5d6;
+  --ui-border: #cdbf9c;
+  --ui-divider: #e2d8b8;
+  --ink: #1a1a1a;
+  --ink-soft: #6e5d36;
+  --ink-mute: #888;
+  --field-bg: #ffffff;
+  --field-bg-active: #2a2a2a;
+  --field-border-active: #444;
+  --danger: #b91c1c;
+  --kb-bg: #1a1a1a;
+}
+:root[data-theme="dark"] {
+  --paper: #1b1d22;
+  --ui-bg: #23262e;
+  --ui-bg-soft: #2c2f38;
+  --ui-border: #3a3e48;
+  --ui-divider: #353944;
+  --ink: #e8e4d8;
+  --ink-soft: #b8a878;
+  --ink-mute: #6e7280;
+  --field-bg: #2c2f38;
+  --field-bg-active: #e8e4d8;
+  --field-border-active: #b8a878;
+  --danger: #ef5350;
+  --kb-bg: #b8a878;
+}
+:root[data-theme="cool"] {
+  --paper: #f4f5f7;
+  --ui-bg: #e6e8ec;
+  --ui-bg-soft: #d8dbe2;
+  --ui-border: #b6bac4;
+  --ui-divider: #d0d4dc;
+  --ink: #1a2030;
+  --ink-soft: #4a566e;
+  --ink-mute: #7a8090;
+  --field-bg: #ffffff;
+  --field-bg-active: #1a2030;
+  --field-border-active: #4a566e;
+  --danger: #c92a2a;
+  --kb-bg: #1a2030;
+}
+:root[data-theme="paper"] {
+  /* warm clean ivory — zine paper without beige's yellow cast */
+  --paper: #f8f4ec;
+  --ui-bg: #ede6d8;
+  --ui-bg-soft: #e3dac8;
+  --ui-border: #bba980;
+  --ui-divider: #d5c8a8;
+  --ink: #2a2520;
+  --ink-soft: #7a6a4a;
+  --ink-mute: #a89678;
+  --field-bg: #ffffff;
+  --field-bg-active: #2a2520;
+  --field-border-active: #7a6a4a;
+  --danger: #b03020;
+  --kb-bg: #2a2520;
+}
+:root[data-theme="bone"] {
+  /* cool ivory, slightly desaturated — museum label / quiet print */
+  --paper: #eeece4;
+  --ui-bg: #e2dfd2;
+  --ui-bg-soft: #d6d2c0;
+  --ui-border: #9c9682;
+  --ui-divider: #c4bea8;
+  --ink: #1f1e1a;
+  --ink-soft: #5a5444;
+  --ink-mute: #8a8472;
+  --field-bg: #ffffff;
+  --field-bg-active: #1f1e1a;
+  --field-border-active: #5a5444;
+  --danger: #a83020;
+  --kb-bg: #1f1e1a;
+}
+:root[data-theme="sepia"] {
+  --paper: #f0e3c4;
+  --ui-bg: #e8d8b0;
+  --ui-bg-soft: #ddc998;
+  --ui-border: #b89860;
+  --ui-divider: #c8b078;
+  --ink: #3a2410;
+  --ink-soft: #6b4824;
+  --ink-mute: #9a7848;
+  --field-bg: #faf0d8;
+  --field-bg-active: #3a2410;
+  --field-border-active: #6b4824;
+  --danger: #aa3322;
+  --kb-bg: #3a2410;
+}
+:root[data-theme="outrun"] {
+  /* outrun: 80s neon synth aesthetic — magenta + cyan on near-black */
+  --paper: #0c0d18;
+  --ui-bg: #15172a;
+  --ui-bg-soft: #1d2040;
+  --ui-border: #ff2a90;
+  --ui-divider: #3a2050;
+  --ink: #d8e8ff;
+  --ink-soft: #ff2a90;
+  --ink-mute: #6a78a0;
+  --field-bg: #1d2040;
+  --field-bg-active: #ff2a90;
+  --field-border-active: #00e8ff;
+  --danger: #ff4060;
+  --kb-bg: #00e8ff;
+}
+:root[data-theme="killengn"] {
+  /* Kill ENGN: industrial sci-fi, deep teal-black with cyan accents */
+  --paper: #0a1416;
+  --ui-bg: #122225;
+  --ui-bg-soft: #1a3033;
+  --ui-border: #2cd4c8;
+  --ui-divider: #1f3d40;
+  --ink: #c8e8e8;
+  --ink-soft: #2cd4c8;
+  --ink-mute: #5a7878;
+  --field-bg: #1a3033;
+  --field-bg-active: #2cd4c8;
+  --field-border-active: #c8e8e8;
+  --danger: #ff5566;
+  --kb-bg: #2cd4c8;
+}
+:root[data-theme="grivt"] {
+  /* Grivt: weathered industrial, oxidized brass on dirty cream paper */
+  --paper: #c4b89e;
+  --ui-bg: #5d5347;
+  --ui-bg-soft: #756a5c;
+  --ui-border: #8b7a5a;
+  --ui-divider: #6e6354;
+  --ink: #f0e8d4;
+  --ink-soft: #d4b870;
+  --ink-mute: #a89b80;
+  --field-bg: #2e2418;
+  --field-bg-active: #d4b870;
+  --field-border-active: #f0e8d4;
+  --danger: #c84830;
+  --kb-bg: #d4b870;
+}
+:root[data-theme="blueprint"] {
+  /* lightened so labels and lines read crisply at zine print sizes */
+  --paper: #2d5c8c;
+  --ui-bg: #366aa0;
+  --ui-bg-soft: #4078b0;
+  --ui-border: #9cc8ec;
+  --ui-divider: #4a7eb4;
+  --ink: #f0f8ff;
+  --ink-soft: #c8e0f4;
+  --ink-mute: #a8c8e4;
+  --field-bg: #4078b0;
+  --field-bg-active: #f0f8ff;
+  --field-border-active: #9cc8ec;
+  --danger: #ff9090;
+  --kb-bg: #f0f8ff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: Inter, Helvetica, Arial, sans-serif;
+  background: var(--paper); color: var(--ink); overflow: hidden; }
+#app { display: flex; height: 100vh; }
+#sidebar { width: 300px; background: var(--ui-bg); border-right: 1px solid var(--ui-border);
+  padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+  font-size: 13px; }
+#sidebar h1 { font-size: 16px; font-weight: 600; }
+#sidebar h2 { font-size: 11px; font-weight: 600; letter-spacing: 1.4px;
+  text-transform: uppercase; color: var(--ink-soft); margin-bottom: 4px; }
+#main { flex: 1; position: relative; min-width: 0; }
+#canvas-container { position: absolute; inset: 0; }
+#hud, #zoom-readout { position: absolute; background: rgba(255,255,255,0.85);
+  padding: 6px 10px; border-radius: 4px; border: 1px solid var(--ui-border);
+  pointer-events: none; font-size: 11px; line-height: 1.5; color: var(--ink); }
+#hud { top: 14px; right: 14px; }
+#zoom-readout { bottom: 14px; right: 14px; font-family: monospace; font-size: 10px; }
+#live-toggle { position: absolute; bottom: 14px; right: 82px;
+  background: rgba(255,255,255,0.85); border: 1px solid var(--ui-border);
+  color: var(--ink); padding: 4px 11px; border-radius: 4px;
+  font: inherit; font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
+  cursor: pointer; }
+#live-toggle:hover { background: var(--ui-bg-soft); }
+#live-toggle.active { background: var(--ink); color: var(--paper);
+  border-color: var(--ink); }
+.btn { background: var(--field-bg); border: 1px solid var(--ui-border); padding: 5px 9px; cursor: pointer;
+  font-family: inherit; font-size: 12px; border-radius: 4px; text-align: left;
+  color: var(--ink); }
+.btn:hover { background: var(--ui-bg-soft); }
+.btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.btn.tiny { padding: 2px 6px; font-size: 10px; }
+.btn.danger { color: var(--danger); }
+.row { display: flex; gap: 4px; flex-wrap: wrap; }
+.row .btn { flex: 1; text-align: center; }
+.line-item, .plane-item { display: flex; align-items: center; gap: 4px;
+  padding: 5px 6px; background: var(--field-bg); border: 1px solid var(--ui-border);
+  border-radius: 4px; cursor: pointer; border-left-width: 4px; font-size: 11px;
+  margin-bottom: 3px; color: var(--ink); }
+.line-item.active, .plane-item.active { background: var(--ink); color: var(--paper); }
+.line-item input[type=text], .plane-item input[type=text] {
+  flex: 1; min-width: 0; background: transparent; border: none;
+  font: inherit; color: inherit; }
+.swatch { width: 12px; height: 12px; border-radius: 50%;
+  border: 1px solid var(--ink); flex-shrink: 0; }
+.hex-input { width: 60px; font-family: monospace; font-size: 10px;
+  padding: 1px 3px; background: var(--field-bg); border: 1px solid var(--ui-border);
+  border-radius: 2px; text-align: center; color: var(--ink); }
+.z-input, .r-input { width: 42px; font-family: monospace; font-size: 10px;
+  padding: 1px 3px; background: var(--field-bg); border: 1px solid var(--ui-border);
+  border-radius: 2px; text-align: right; color: var(--ink); }
+.style-select { font: inherit; font-size: 10px; padding: 1px 2px;
+  border: 1px solid var(--ui-border); border-radius: 2px; background: var(--field-bg); color: var(--ink); }
+.line-item.active .hex-input, .plane-item.active .hex-input,
+.line-item.active .z-input, .plane-item.active .z-input,
+.line-item.active .r-input, .plane-item.active .r-input,
+.line-item.active .style-select {
+  background: var(--field-bg-active); border-color: var(--field-border-active); color: var(--paper); }
+.kb { background: var(--kb-bg); color: var(--paper); padding: 1px 4px; border-radius: 2px;
+  font-family: monospace; font-size: 9px; }
+input[type=file] { display: none; }
+#preview-pane { position: absolute; top: 0; right: 0; bottom: 0; width: 42%;
+  background: var(--field-bg); border-left: 1px solid var(--ui-border); display: none;
+  flex-direction: column; z-index: 5; color: var(--ink); }
+#preview-pane.open { display: flex; }
+#preview-pane .preview-header { padding: 5px 10px; background: var(--ui-bg);
+  border-bottom: 1px solid var(--ui-border); font-size: 11px; display: flex;
+  justify-content: space-between; align-items: center; color: var(--ink); }
+#preview-pane iframe { flex: 1; width: 100%; border: none; background: var(--paper); }
+#popover { position: absolute; background: var(--field-bg); border: 1px solid var(--ink);
+  border-radius: 6px; padding: 8px; min-width: 180px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15); font-size: 11px; z-index: 100;
+  display: none; color: var(--ink); }
+#popover.open { display: block; }
+#popover h3 { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+#popover label { display: block; margin-top: 5px; color: var(--ink-mute); font-size: 10px; }
+#popover input, #popover select { width: 100%; padding: 3px 5px;
+  border: 1px solid var(--ui-border); border-radius: 3px; font-family: inherit;
+  font-size: 11px; margin-top: 2px; background: var(--field-bg); color: var(--ink); }
+#popover .popover-buttons { display: flex; gap: 4px; margin-top: 8px; }
+#popover .popover-buttons .btn { flex: 1; text-align: center; font-size: 10px; }
+#popover .coord-line { font-family: monospace; font-size: 10px; color: var(--ink-mute); }
+#marquee { position: absolute; border: 1px dashed var(--ink);
+  background: rgba(26,26,26,0.05); pointer-events: none;
+  display: none; z-index: 50; }
+#marquee.active { display: block; }
+#ctxmenu { position: absolute; background: var(--field-bg); border: 1px solid var(--ink);
+  border-radius: 4px; min-width: 160px; box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  font-size: 11px; z-index: 200; display: none; padding: 4px 0; color: var(--ink); }
+#ctxmenu.open { display: block; }
+#ctxmenu .ctx-item { padding: 5px 12px; cursor: pointer; }
+#ctxmenu .ctx-item:hover { background: var(--ui-bg-soft); }
+#ctxmenu .ctx-item.danger { color: var(--danger); }
+#ctxmenu .ctx-sep { height: 1px; background: var(--ui-divider); margin: 4px 0; }
+#ctxmenu .ctx-label { padding: 3px 12px; color: var(--ink-mute); font-size: 10px;
+  font-family: monospace; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  display: none; align-items: center; justify-content: center; z-index: 500; }
+.modal-backdrop.open { display: flex; }
+.modal-panel { background: var(--field-bg); border: 1px solid var(--ui-border);
+  border-radius: 6px; max-width: 540px; width: 92%; max-height: 86vh;
+  display: flex; flex-direction: column; color: var(--ink);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35); }
+.modal-header { padding: 10px 14px; border-bottom: 1px solid var(--ui-border);
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--ui-bg); border-radius: 6px 6px 0 0; }
+.modal-body { padding: 12px 16px; overflow-y: auto; font-size: 12px; }
+.modal-body h3 { font-size: 10px; font-weight: 600; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--ink-soft); margin: 10px 0 4px 0; }
+.modal-body h3:first-child { margin-top: 0; }
+.kb-table { width: 100%; border-collapse: collapse; font-size: 11px;
+  line-height: 1.55; }
+.kb-table td { padding: 2px 4px; vertical-align: top; }
+.kb-table td:first-child { white-space: nowrap; width: 32%; }
+.modal-link { color: var(--ink); border: 1px solid var(--ui-border);
+  background: var(--ui-bg-soft); padding: 4px 10px; border-radius: 3px;
+  text-decoration: none; font-size: 11px; }
+.modal-link:hover { background: var(--ui-bg); }
+</style>
+</head>
+<body>
+<div id="app">
+<aside id="sidebar">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">
+  <div style="flex:1;min-width:0">
+    <h1 style="margin-bottom:0;font-family:'Space Grotesk',Inter,sans-serif;font-weight:700;font-size:22px;letter-spacing:-0.8px;line-height:1">TunnelMap</h1>
+    <a href="https://hed0rah.github.io/tunnelmap" target="_blank" style="font-family:'Space Grotesk',Inter,sans-serif;font-size:10px;color:var(--ink-soft);text-decoration:none;letter-spacing:0.2px;display:block;margin-top:2px;font-weight:500">hed0rah.github.io/tunnelmap</a>
+  </div>
+  <button id="help-btn" title="help / shortcuts / about" style="background:var(--field-bg);border:1px solid var(--ui-border);color:var(--ink);width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:13px;line-height:1;font-weight:600;flex-shrink:0">?</button>
+</div>
+<div><h2>mode</h2><div class="row" id="mode-row"></div></div>
+<div><h2>planes</h2><div id="plane-list"></div>
+<button class="btn" id="add-plane" style="width:100%;text-align:center;margin-top:4px">+ add plane</button></div>
+<div><h2>lines</h2><div id="line-list"></div>
+<button class="btn" id="new-line" style="width:100%;text-align:center;margin-top:4px">+ new line</button></div>
+<div><h2>title</h2>
+<input type="text" id="map-title" placeholder="map title" style="width:100%;font-family:inherit;font-size:12px;padding:4px 6px;border:1px solid #cdbf9c;border-radius:3px;background:#fff;color:#1a1a1a">
+<input type="text" id="map-subtitle" placeholder="subtitle (optional)" style="width:100%;font-family:inherit;font-size:11px;padding:4px 6px;border:1px solid #cdbf9c;border-radius:3px;background:#fff;color:#1a1a1a;margin-top:4px">
+</div>
+<div><h2>theme</h2>
+<select id="theme-picker" style="width:100%;font-family:inherit;font-size:11px;padding:4px 6px;border:1px solid var(--ui-border);border-radius:3px;background:var(--field-bg);color:var(--ink)">
+  <option value="cool">cool grey (default)</option>
+  <option value="paper">paper</option>
+  <option value="bone">bone</option>
+  <option value="beige">beige</option>
+  <option value="sepia">sepia</option>
+  <option value="blueprint">blueprint</option>
+  <option value="dark">dark</option>
+  <option value="outrun">Outrun</option>
+  <option value="killengn">Kill ENGN</option>
+  <option value="grivt">Grivt</option>
+</select>
+</div>
+<div><h2>view angle</h2>
+<div style="font-size:10px;color:var(--ink-mute);margin-bottom:4px">affects export &amp; preview only</div>
+<select id="view-picker" style="width:100%;font-family:inherit;font-size:11px;padding:4px 6px;border:1px solid var(--ui-border);border-radius:3px;background:var(--field-bg);color:var(--ink)">
+  <option value="iso-ne">isometric NE (default)</option>
+  <option value="iso-nw">isometric NW</option>
+  <option value="iso-sw">isometric SW</option>
+  <option value="iso-se">isometric SE</option>
+  <option value="flat">flat / top-down</option>
+  <option value="flat-45">flat rotated 45°</option>
+  <option value="military">military (45° iso)</option>
+  <option value="cabinet">cabinet (half depth)</option>
+</select>
+</div>
+<div><h2>legend</h2>
+<label style="font-size:11px;display:block;color:#444"><input type="checkbox" id="legend-show" style="vertical-align:middle"> show legend</label>
+<label style="font-size:11px;display:block;color:#444;margin-top:3px">corner
+  <select id="legend-corner" style="font-family:inherit;font-size:11px;padding:2px 4px;margin-left:4px">
+    <option value="tl">top left</option>
+    <option value="tr">top right</option>
+    <option value="bl">bottom left</option>
+    <option value="br" selected>bottom right</option>
+  </select>
+</label>
+<label style="font-size:11px;display:block;color:#444;margin-top:3px"><input type="checkbox" id="legend-endpoints" style="vertical-align:middle"> show endpoints</label>
+</div>
+<div><h2>transform</h2>
+<div style="font-size:10px;color:var(--ink-mute);margin-bottom:4px">acts on selection or active line</div>
+<div class="row" style="gap:3px">
+  <button class="btn tiny" id="xform-rcw" title="rotate 90 clockwise">↻ 90</button>
+  <button class="btn tiny" id="xform-rccw" title="rotate 90 counter-clockwise">↺ 90</button>
+  <button class="btn tiny" id="xform-mh" title="mirror horizontal">↔ mirror</button>
+  <button class="btn tiny" id="xform-mv" title="mirror vertical">↕ mirror</button>
+</div>
+<button class="btn tiny" id="xform-straighten" style="width:100%;margin-top:3px;text-align:center">straighten active line</button>
+</div>
+<div><h2>file</h2>
+<button class="btn" id="toggle-preview" style="width:100%">live preview</button>
+<button class="btn" id="export" style="width:100%;margin-top:4px">export svg</button>
+<button class="btn" id="save" style="width:100%;margin-top:4px">save json</button>
+<label class="btn" for="load-input" style="width:100%;margin-top:4px;display:block;text-align:center">load json</label>
+<input type="file" id="load-input" accept=".json">
+<button class="btn danger" id="reset" style="width:100%;margin-top:4px">reset all</button>
+</div>
+</aside>
+<main id="main">
+<div id="canvas-container"></div>
+<div id="hud"></div>
+<button id="live-toggle" title="open live preview">Live</button>
+<div id="zoom-readout"></div>
+<div id="marquee"></div>
+<div id="ctxmenu"></div>
+<div id="popover">
+<h3>station</h3>
+<div class="coord-line" id="popover-coord"></div>
+<label>name</label>
+<input type="text" id="popover-name" placeholder="(unnamed)">
+<label>kind</label>
+<select id="popover-kind">
+  <option value="regular">regular</option>
+  <option value="terminal">terminal</option>
+  <option value="interchange">interchange</option>
+  <option value="bend">bend</option>
+  <option value="depot">depot (parked trains)</option>
+  <option value="maintenance">maintenance bay</option>
+  <option value="abandoned">abandoned</option>
+  <option value="construction">under construction</option>
+  <option value="signal_yard">signal yard / interlocking</option>
+  <option value="control_tower">control tower</option>
+  <option value="platform">platform (long bar)</option>
+  <option value="junction">junction switch</option>
+</select>
+<label>shape</label>
+<select id="popover-shape">
+  <option value="circle">circle</option>
+  <option value="square">square</option>
+  <option value="diamond">diamond</option>
+  <option value="triangle">triangle</option>
+  <option value="plus">plus</option>
+  <option value="ring">ring</option>
+  <option value="pill">pill (auto-orient)</option>
+  <option value="pill_v">pill (vertical)</option>
+  <option value="stadium">stadium</option>
+  <option value="hex">hexagon</option>
+  <option value="cluster">cluster</option>
+</select>
+<label>corner radius <span id="popover-radius-readout" style="font-family:monospace;color:#888"></span></label>
+<input type="range" id="popover-radius" min="0" max="3" step="0.1" value="0.5">
+<label>offset bias <span id="popover-bias-readout" style="font-family:monospace;color:#888"></span></label>
+<input type="range" id="popover-bias" min="-1.5" max="1.5" step="0.05" value="0">
+<label>station size <span id="popover-size-readout" style="font-family:monospace;color:#888"></span></label>
+<input type="range" id="popover-size" min="0.5" max="2.5" step="0.05" value="1">
+<div class="popover-buttons">
+  <button class="btn tiny" id="popover-close">close</button>
+  <button class="btn tiny danger" id="popover-clear">clear</button>
+</div>
+</div>
+<aside id="preview-pane">
+<div class="preview-header">
+<span>live svg preview</span>
+<span style="display:flex;gap:5px;align-items:center">
+  <select id="view-picker-preview" title="view angle" style="font:inherit;font-size:10px;padding:1px 4px;border:1px solid var(--ui-border);border-radius:2px;background:var(--field-bg);color:var(--ink)">
+    <option value="iso-ne">iso NE</option>
+    <option value="iso-nw">iso NW</option>
+    <option value="iso-sw">iso SW</option>
+    <option value="iso-se">iso SE</option>
+    <option value="flat">flat</option>
+    <option value="flat-45">flat 45°</option>
+    <option value="military">military</option>
+    <option value="cabinet">cabinet</option>
+  </select>
+  <button class="btn tiny" id="toggle-bw">B&amp;W</button><button class="btn tiny" id="close-preview">close</button>
+</span>
+</div>
+<iframe id="preview-frame"></iframe>
+</aside>
+<div id="help-modal" class="modal-backdrop">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h2 style="margin:0;font-size:16px;letter-spacing:-0.3px;font-family:'Space Grotesk',Inter,sans-serif;font-weight:700">TunnelMap — help</h2>
+      <button id="help-close" class="btn tiny">close</button>
+    </div>
+    <div class="modal-body">
+      <h3>modes</h3>
+      <table class="kb-table">
+        <tr><td><span class="kb">d</span></td><td>draw — extend the active line at the cursor</td></tr>
+        <tr><td><span class="kb">b</span></td><td>bend — insert a bend in the nearest segment</td></tr>
+        <tr><td><span class="kb">m</span></td><td>move — drag a waypoint to relocate</td></tr>
+        <tr><td><span class="kb">x</span></td><td>delete — remove a waypoint or lift</td></tr>
+        <tr><td><span class="kb">l</span></td><td>lift — connect two waypoints across planes</td></tr>
+        <tr><td><span class="kb">s</span></td><td>select — click for one, marquee for many</td></tr>
+      </table>
+
+      <h3>planes</h3>
+      <table class="kb-table">
+        <tr><td><span class="kb">1</span>…<span class="kb">6</span></td><td>jump to plane index</td></tr>
+        <tr><td><span class="kb">[</span>/<span class="kb">]</span></td><td>previous / next plane</td></tr>
+      </table>
+
+      <h3>transforms</h3>
+      <table class="kb-table">
+        <tr><td><span class="kb">r</span> / <span class="kb">shift+r</span></td><td>rotate selection 90° cw / ccw</td></tr>
+        <tr><td><span class="kb">h</span> / <span class="kb">v</span></td><td>mirror horizontally / vertically</td></tr>
+        <tr><td><span class="kb">\\</span></td><td>straighten active line</td></tr>
+        <tr><td><span class="kb">tab</span></td><td>flip line direction</td></tr>
+        <tr><td><span class="kb">del</span></td><td>remove selected waypoints</td></tr>
+      </table>
+
+      <h3>history</h3>
+      <table class="kb-table">
+        <tr><td><span class="kb">cmd+z</span></td><td>undo</td></tr>
+        <tr><td><span class="kb">cmd+shift+z</span></td><td>redo</td></tr>
+        <tr><td><span class="kb">esc</span></td><td>cancel pending / close popover / clear selection / pop last waypoint</td></tr>
+      </table>
+
+      <h3>mouse</h3>
+      <table class="kb-table">
+        <tr><td><span class="kb">wheel</span></td><td>zoom</td></tr>
+        <tr><td><span class="kb">mid-drag</span></td><td>pan</td></tr>
+        <tr><td><span class="kb">shift-drag</span></td><td>pan</td></tr>
+        <tr><td><span class="kb">alt-drag</span></td><td>pan (works on left or right button)</td></tr>
+        <tr><td><span class="kb">right-click</span></td><td>context menu — different items per target (waypoint / line / lift / plane)</td></tr>
+        <tr><td><span class="kb">shift+click</span></td><td>add/remove from selection in select mode</td></tr>
+      </table>
+
+      <h3>links</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        <a href="https://github.com/hed0rah/tunnelmap" target="_blank" class="modal-link">github / tunnelmap</a>
+        <a href="https://github.com/hed0rah" target="_blank" class="modal-link">github / hed0rah</a>
+        <a href="https://x.com/r3l0z" target="_blank" class="modal-link">x / @r3l0z</a>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+</div>
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const MAX_PLANES = 6;
+const TRACK_SPACING = 0.20;
+const STATION_R = 0.18;
+const INTERCHANGE_R = 0.32;
+const LINE_RADIUS = 0.13;
+const Y_STAGGER = 0.006;
+const SMOOTH_R = 0.5;
+const DEFAULT_TINTS = ['#f0eadf','#ece5d6','#e8e0cd','#e2d8b8','#d6caa3','#d3c598'];
+const palette = ['#d62828','#1565c0','#2e7d32','#5d4037','#f9a825',
+  '#c2185b','#00838f','#37474f','#6a1b9a','#ef6c00','#558b2f'];
+
+// showcase fixture. every line style, every station shape, vertical lifts
+// between plane pairs, varying corner radii. swap in your own via load json.
+const data = {
+  planes: [
+    { name: 'Surface',   z: 0,   tint: '#f0eadf' },
+    { name: 'Mid Level', z: 3.6, tint: '#ece5d6' },
+    { name: 'Sky Lines', z: 7.2, tint: '#e8e0cd' },
+  ],
+  lines: [
+    { id: 'vco', name: 'VCO', color: '#d62828', style: 'solid', waypoints: [
+      {gx:-7,gy:-4,plane:0}, {gx:6,gy:-4,plane:0}] },
+    { id: 'vcf', name: 'VCF', color: '#1565c0', style: 'dashed', waypoints: [
+      {gx:-3,gy:-5,plane:0}, {gx:-3,gy:5,plane:0}] },
+    { id: 'vca', name: 'VCA', color: '#2e7d32', style: 'dotted', waypoints: [
+      {gx:-6,gy:5,plane:0}, {gx:-3,gy:2,plane:0},
+      {gx:1,gy:-2,plane:0}, {gx:5,gy:-2,plane:0}] },
+    { id: 'bus', name: 'BUS', color: '#5d4037', style: 'double', waypoints: [
+      {gx:-5,gy:-4,plane:0}, {gx:-3,gy:-4,plane:0},
+      {gx:-3,gy:2,plane:0}, {gx:-1,gy:4,plane:0}] },
+    { id: 'lfo', name: 'LFO', color: '#f9a825', style: 'thick', waypoints: [
+      {gx:-6,gy:-2,plane:1}, {gx:6,gy:-2,plane:1}] },
+    { id: 'eg',  name: 'EG',  color: '#c2185b', style: 'thin',  waypoints: [
+      {gx:2,gy:-4,plane:1}, {gx:2,gy:5,plane:1}] },
+    { id: 'mix', name: 'MIX', color: '#00838f', style: 'dashed', waypoints: [
+      {gx:-5,gy:4,plane:1}, {gx:-1,gy:0,plane:1}, {gx:4,gy:0,plane:1}] },
+    { id: 'trk', name: 'TRK', color: '#37474f', style: 'dotted', waypoints: [
+      {gx:-3,gy:-2,plane:1}, {gx:2,gy:-2,plane:1}, {gx:2,gy:4,plane:1}] },
+    { id: 'smp', name: 'SMP', color: '#6a1b9a', style: 'solid', waypoints: [
+      {gx:-5,gy:-1,plane:2}, {gx:5,gy:-1,plane:2}] },
+    { id: 'seq', name: 'SEQ', color: '#ef6c00', style: 'double', waypoints: [
+      {gx:-3,gy:4,plane:2}, {gx:-3,gy:1,plane:2},
+      {gx:3,gy:1,plane:2}, {gx:3,gy:4,plane:2}] },
+    { id: 'brn', name: 'BRN', color: '#558b2f', style: 'solid', waypoints: [
+      {gx:-1,gy:-1,plane:2}, {gx:3,gy:-1,plane:2}, {gx:3,gy:1,plane:2}] },
+  ],
+  stations: [
+    { id:'s_vco_w', gx:-7, gy:-4, plane:0, name:'VCO West',  kind:'terminal',    shape:'circle' },
+    { id:'s_vco_e', gx: 6, gy:-4, plane:0, name:'VCO East',  kind:'terminal',    shape:'square' },
+    { id:'s_vcf_n', gx:-3, gy:-5, plane:0, name:'VCF North', kind:'terminal',    shape:'diamond' },
+    { id:'s_vcf_s', gx:-3, gy: 5, plane:0, name:'VCF South', kind:'terminal',    shape:'triangle' },
+    { id:'s_vca_w', gx:-6, gy: 5, plane:0, name:'VCA Far',   kind:'terminal',    shape:'plus' },
+    { id:'s_vca_e', gx: 5, gy:-2, plane:0, name:'VCA East',  kind:'terminal',    shape:'ring' },
+    { id:'s_fj',    gx:-3, gy:-4, plane:0, name:'Filter Jct',kind:'interchange', shape:'circle' },
+    { id:'s_bb',    gx:-3, gy: 2, plane:0, name:'Bass Bin',  kind:'interchange', shape:'circle' },
+    { id:'s_lfo_w', gx:-6, gy:-2, plane:1, name:'LFO West',  kind:'terminal',    shape:'square' },
+    { id:'s_lfo_e', gx: 6, gy:-2, plane:1, name:'LFO East',  kind:'terminal',    shape:'square' },
+    { id:'s_tri',   gx: 2, gy:-2, plane:1, name:'Triangle',  kind:'interchange', shape:'diamond' },
+    { id:'s_smp_w', gx:-5, gy:-1, plane:2, name:'Sampler W', kind:'terminal',    shape:'plus' },
+    { id:'s_smp_e', gx: 5, gy:-1, plane:2, name:'Sampler E', kind:'terminal',    shape:'plus' },
+    { id:'s_step1', gx:-3, gy: 4, plane:2, name:'Step One',  kind:'terminal',    shape:'ring' },
+    { id:'s_step8', gx: 3, gy: 4, plane:2, name:'Step Eight',kind:'terminal',    shape:'ring' },
+  ],
+  lifts: [
+    { a: {gx: 3, gy:-4, plane:0}, b: {gx: 2, gy:-2, plane:1} },
+    { a: {gx:-3, gy: 2, plane:0}, b: {gx:-1, gy: 0, plane:1} },
+    { a: {gx: 4, gy: 0, plane:1}, b: {gx: 3, gy: 1, plane:2} },
+    { a: {gx:-1, gy: 0, plane:1}, b: {gx:-3, gy: 1, plane:2} },
+    { a: {gx: 2, gy: 4, plane:1}, b: {gx: 3, gy: 4, plane:2} },
+  ],
+};
+
+let mode = 'draw', activePlane = 0, activeLineId = 'vco';
+let dragging = null, hoverCell = null, liftPending = null;
+let selectedWaypoints = [];
+// 'color' | 'mono' | 'grey'
+//   color: hex colors per line, user's per-line style (solid/dashed/etc)
+//   mono:  pure black on white with 8 dash/dot/double styles
+//   grey:  greyscale lines + svg hatch/stipple patterns for differentiation
+let bwMode = 'color';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xfaf8f3);
+const container = document.getElementById('canvas-container');
+const aspect = () => Math.max(0.1, container.clientWidth / Math.max(1, container.clientHeight));
+const FRUSTUM = 22;
+const camera = new THREE.OrthographicCamera(
+  -FRUSTUM*aspect()/2, FRUSTUM*aspect()/2, FRUSTUM/2, -FRUSTUM/2, -1000, 1000);
+camera.position.set(20, 16, 20);
+camera.lookAt(0, 3.6, 0);
+camera.zoom = 1; camera.updateProjectionMatrix();
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+container.appendChild(renderer.domElement);
+scene.add(new THREE.AmbientLight(0xffffff, 1));
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.12;
+controls.target.set(0, 3.6, 0);
+controls.minZoom = 0.15; controls.maxZoom = 12;
+controls.enableZoom = false;
+// right click is reserved for the context menu now. while alt is held, BOTH
+// alt+left and alt+right pan — the user kept accidentally alt+right-clicking,
+// so we honor that as a pan rather than a no-op or a menu.
+// MIDDLE = wheel-click drag pans. wheel-scroll still zooms via the custom
+// wheel handler below, so DOLLY-on-middle was redundant.
+controls.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.PAN, RIGHT: null };
+window.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Shift') controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+  if (ev.key === 'Alt') {
+    controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+    controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
+  }
+});
+window.addEventListener('keyup', (ev) => {
+  if (ev.key === 'Shift') controls.mouseButtons.LEFT = null;
+  if (ev.key === 'Alt') {
+    controls.mouseButtons.LEFT = null;
+    controls.mouseButtons.RIGHT = null;
+  }
+});
+
+const planeMeshes = [];
+const planeGroup = new THREE.Group();
+const linesGroup = new THREE.Group();
+const stationsGroup = new THREE.Group();
+const liftsGroup = new THREE.Group();
+const editGroup = new THREE.Group();
+const selectionGroup = new THREE.Group();
+const guidesGroup = new THREE.Group();
+scene.add(planeGroup, linesGroup, stationsGroup, liftsGroup, editGroup, selectionGroup, guidesGroup);
+function clearGroup(g) { while (g.children.length) g.remove(g.children[0]); }
+
+function buildPlanes() {
+  clearGroup(planeGroup); planeMeshes.length = 0;
+  data.planes.forEach((p, i) => {
+    if (p.hidden) { planeMeshes.push(null); return; }
+    const w = 18, h = 14;
+    const tint = new THREE.Color(p.tint || DEFAULT_TINTS[i % DEFAULT_TINTS.length]);
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+      new THREE.MeshBasicMaterial({ color: tint, transparent: true,
+        opacity: i === activePlane ? 0.55 : 0.22, side: THREE.DoubleSide }));
+    mesh.rotation.x = -Math.PI/2; mesh.position.y = p.z;
+    planeGroup.add(mesh); planeMeshes.push(mesh);
+    const grid = new THREE.GridHelper(w, w, 0xcdbf9c, 0xddd6c2);
+    grid.position.y = p.z + 0.001;
+    grid.material.opacity = i === activePlane ? 0.6 : 0.25;
+    grid.material.transparent = true;
+    planeGroup.add(grid);
+  });
+}
+function planeHidden(idx) { return !!(data.planes[idx] && data.planes[idx].hidden); }
+
+function wpToWorld(wp, off) {
+  off = off || {x:0,y:0};
+  const z = data.planes[wp.plane] ? data.planes[wp.plane].z : 0;
+  return new THREE.Vector3(wp.gx + off.x, z + 0.04, wp.gy + off.y);
+}
+function updateCameraTarget() {
+  const heights = data.planes.map(p => p.z);
+  const c = heights.length ? (Math.min(...heights) + Math.max(...heights)) / 2 : 0;
+  controls.target.set(0, c, 0);
+}
+
+function buildCorridors() {
+  const m = new Map();
+  for (const ln of data.lines) {
+    for (let i = 0; i < ln.waypoints.length - 1; i++) {
+      const a = ln.waypoints[i], b = ln.waypoints[i+1];
+      if (a.plane !== b.plane) continue;
+      const p1 = (a.gx < b.gx) || (a.gx === b.gx && a.gy <= b.gy) ? [a.gx,a.gy] : [b.gx,b.gy];
+      const p2 = (p1[0] === a.gx && p1[1] === a.gy) ? [b.gx,b.gy] : [a.gx,a.gy];
+      const k = a.plane + '|' + p1[0] + ',' + p1[1] + '|' + p2[0] + ',' + p2[1];
+      let arr = m.get(k);
+      if (!arr) { arr = { lines: [], plane: a.plane, p1, p2 }; m.set(k, arr); }
+      if (!arr.lines.includes(ln.id)) arr.lines.push(ln.id);
+    }
+  }
+  return m;
+}
+function edgeOffset(a, b, lineId, corridors) {
+  if (a.plane !== b.plane) return {x:0,y:0};
+  const p1 = (a.gx < b.gx) || (a.gx === b.gx && a.gy <= b.gy) ? [a.gx,a.gy] : [b.gx,b.gy];
+  const p2 = (p1[0] === a.gx && p1[1] === a.gy) ? [b.gx,b.gy] : [a.gx,a.gy];
+  const k = a.plane + '|' + p1[0] + ',' + p1[1] + '|' + p2[0] + ',' + p2[1];
+  const cor = corridors.get(k);
+  if (!cor || cor.lines.length < 2) return {x:0,y:0};
+  const slot = cor.lines.indexOf(lineId);
+  const n = cor.lines.length;
+  const amount = (slot - (n - 1) / 2) * TRACK_SPACING;
+  const dx = p2[0] - p1[0], dy = p2[1] - p1[1];
+  const L = Math.hypot(dx, dy);
+  if (L < 1e-6) return {x:0,y:0};
+  return { x: -dy / L * amount, y: dx / L * amount };
+}
+function waypointOffset(line, i, corridors) {
+  const wps = line.waypoints, offs = [];
+  if (i > 0 && wps[i-1].plane === wps[i].plane)
+    offs.push(edgeOffset(wps[i-1], wps[i], line.id, corridors));
+  if (i < wps.length - 1 && wps[i+1].plane === wps[i].plane)
+    offs.push(edgeOffset(wps[i], wps[i+1], line.id, corridors));
+  let auto = { x: 0, y: 0 };
+  if (offs.length) {
+    auto.x = offs.reduce((a,o) => a + o.x, 0) / offs.length;
+    auto.y = offs.reduce((a,o) => a + o.y, 0) / offs.length;
+  }
+  // per-waypoint bias: pushes the rendered point perpendicular to the local
+  // segment by wp.offsetBias grid units. computed against the bisector of
+  // the adjacent segments so it behaves sanely on a corner. unit is grid
+  // cells — typically nudge by 0.1 to 0.6.
+  const wp = wps[i];
+  const bias = wp && (wp.offsetBias || 0);
+  if (Math.abs(bias) > 1e-6) {
+    // build a unit perpendicular from the adjacent segment(s)
+    let px = 0, py = 0;
+    if (i > 0 && wps[i-1].plane === wp.plane) {
+      const dx = wp.gx - wps[i-1].gx, dy = wp.gy - wps[i-1].gy;
+      const L = Math.hypot(dx, dy);
+      if (L > 1e-6) { px += -dy / L; py += dx / L; }
+    }
+    if (i < wps.length - 1 && wps[i+1].plane === wp.plane) {
+      const dx = wps[i+1].gx - wp.gx, dy = wps[i+1].gy - wp.gy;
+      const L = Math.hypot(dx, dy);
+      if (L > 1e-6) { px += -dy / L; py += dx / L; }
+    }
+    const pl = Math.hypot(px, py);
+    if (pl > 1e-6) {
+      auto.x += (px / pl) * bias;
+      auto.y += (py / pl) * bias;
+    }
+  }
+  return auto;
+}
+function radiiForLine(ln) {
+  const def = (ln.smoothRadius != null) ? ln.smoothRadius : SMOOTH_R;
+  return ln.waypoints.map(wp => (wp.cornerRadius != null) ? wp.cornerRadius : def);
+}
+
+// quadratic-bezier corner fillet on a list of Vector3 in xz plane.
+// per-waypoint radius. straight runs and tiny corners are passed through.
+function smoothCorners(points, radii, segments) {
+  if (points.length < 3) return points.slice();
+  const out = [points[0].clone()];
+  for (let i = 1; i < points.length - 1; i++) {
+    const prev = points[i-1], cur = points[i], next = points[i+1];
+    const r = (radii && radii[i] != null) ? radii[i] : SMOOTH_R;
+    if (r < 0.05) { out.push(cur.clone()); continue; }
+    const inLen = cur.distanceTo(prev);
+    const outLen = next.distanceTo(cur);
+    if (inLen < 1e-6 || outLen < 1e-6) { out.push(cur.clone()); continue; }
+    const inDir = cur.clone().sub(prev).normalize();
+    const outDir = next.clone().sub(cur).normalize();
+    const cosA = Math.max(-1, Math.min(1, inDir.dot(outDir)));
+    if (cosA > 0.999) { out.push(cur.clone()); continue; }
+    const tan = Math.tan(Math.acos(cosA) / 2);
+    if (Math.abs(tan) < 1e-6) { out.push(cur.clone()); continue; }
+    const trim = Math.min(r / tan, inLen * 0.49, outLen * 0.49);
+    if (trim < 0.05) { out.push(cur.clone()); continue; }
+    const enter = cur.clone().sub(inDir.clone().multiplyScalar(trim));
+    const exit = cur.clone().add(outDir.clone().multiplyScalar(trim));
+    out.push(enter);
+    for (let s = 1; s < segments; s++) {
+      const t = s / segments, omt = 1 - t;
+      out.push(enter.clone().multiplyScalar(omt*omt)
+        .add(cur.clone().multiplyScalar(2*omt*t))
+        .add(exit.clone().multiplyScalar(t*t)));
+    }
+    out.push(exit);
+  }
+  out.push(points[points.length-1].clone());
+  return out;
+}
+
+// 2d variant used by the svg export. operates on [gx, gy] tuples in grid
+// space, returns same. plane stays constant per line.
+function smoothCornersFlat(pts, radii, segments) {
+  if (pts.length < 3) return pts.map(p => p.slice());
+  const out = [pts[0].slice()];
+  for (let i = 1; i < pts.length - 1; i++) {
+    const prev = pts[i-1], cur = pts[i], next = pts[i+1];
+    const r = (radii && radii[i] != null) ? radii[i] : SMOOTH_R;
+    if (r < 0.05) { out.push(cur.slice()); continue; }
+    const inDx = cur[0]-prev[0], inDy = cur[1]-prev[1];
+    const outDx = next[0]-cur[0], outDy = next[1]-cur[1];
+    const inLen = Math.hypot(inDx, inDy);
+    const outLen = Math.hypot(outDx, outDy);
+    if (inLen < 1e-6 || outLen < 1e-6) { out.push(cur.slice()); continue; }
+    const iux = inDx/inLen, iuy = inDy/inLen;
+    const oux = outDx/outLen, ouy = outDy/outLen;
+    const cosA = Math.max(-1, Math.min(1, iux*oux + iuy*ouy));
+    if (cosA > 0.999) { out.push(cur.slice()); continue; }
+    const tan = Math.tan(Math.acos(cosA) / 2);
+    if (Math.abs(tan) < 1e-6) { out.push(cur.slice()); continue; }
+    const trim = Math.min(r/tan, inLen*0.49, outLen*0.49);
+    if (trim < 0.05) { out.push(cur.slice()); continue; }
+    const enter = [cur[0]-iux*trim, cur[1]-iuy*trim];
+    const exit = [cur[0]+oux*trim, cur[1]+ouy*trim];
+    out.push(enter);
+    for (let s = 1; s < segments; s++) {
+      const t = s/segments, omt = 1-t;
+      out.push([
+        enter[0]*omt*omt + cur[0]*2*omt*t + exit[0]*t*t,
+        enter[1]*omt*omt + cur[1]*2*omt*t + exit[1]*t*t,
+      ]);
+    }
+    out.push(exit);
+  }
+  out.push(pts[pts.length-1].slice());
+  return out;
+}
+
+// catmull-rom (centripetal alpha=0.5) interpolation through all waypoints.
+// gives a flowing curve for lines that aren't octolinear in feel — useful for
+// rivers, cables, ornamental routes. samples each segment at `segments` steps.
+function catmullRom2D(pts, segments) {
+  if (pts.length < 2) return pts.map(p => p.slice());
+  if (pts.length === 2) return pts.map(p => p.slice());
+  const out = [];
+  // virtual endpoints reflected across the first/last waypoint instead of
+  // coincident with them. coincident endpoints cause t1 == t0 in the
+  // centripetal parameterization, which produces NaN samples and corrupts
+  // the export bounding box (preview goes blank/clipped).
+  const n = pts.length;
+  const first = [2*pts[0][0] - pts[1][0], 2*pts[0][1] - pts[1][1]];
+  const last = [2*pts[n-1][0] - pts[n-2][0], 2*pts[n-1][1] - pts[n-2][1]];
+  const ext = [first, ...pts, last];
+  for (let i = 1; i < ext.length - 2; i++) {
+    const p0 = ext[i-1], p1 = ext[i], p2 = ext[i+1], p3 = ext[i+2];
+    const tj = (pa, pb, t) => Math.pow(Math.hypot(pb[0]-pa[0], pb[1]-pa[1]), 0.5) + t;
+    const t0 = 0;
+    const t1 = tj(p0, p1, t0);
+    const t2 = tj(p1, p2, t1);
+    const t3 = tj(p2, p3, t2);
+    for (let s = 0; s < segments; s++) {
+      const t = t1 + (s / segments) * (t2 - t1);
+      const a1x = (t1-t)/(t1-t0)*p0[0] + (t-t0)/(t1-t0)*p1[0];
+      const a1y = (t1-t)/(t1-t0)*p0[1] + (t-t0)/(t1-t0)*p1[1];
+      const a2x = (t2-t)/(t2-t1)*p1[0] + (t-t1)/(t2-t1)*p2[0];
+      const a2y = (t2-t)/(t2-t1)*p1[1] + (t-t1)/(t2-t1)*p2[1];
+      const a3x = (t3-t)/(t3-t2)*p2[0] + (t-t2)/(t3-t2)*p3[0];
+      const a3y = (t3-t)/(t3-t2)*p2[1] + (t-t2)/(t3-t2)*p3[1];
+      const b1x = (t2-t)/(t2-t0)*a1x + (t-t0)/(t2-t0)*a2x;
+      const b1y = (t2-t)/(t2-t0)*a1y + (t-t0)/(t2-t0)*a2y;
+      const b2x = (t3-t)/(t3-t1)*a2x + (t-t1)/(t3-t1)*a3x;
+      const b2y = (t3-t)/(t3-t1)*a2y + (t-t1)/(t3-t1)*a3y;
+      const cx = (t2-t)/(t2-t1)*b1x + (t-t1)/(t2-t1)*b2x;
+      const cy = (t2-t)/(t2-t1)*b1y + (t-t1)/(t2-t1)*b2y;
+      out.push([cx, cy]);
+    }
+  }
+  out.push(pts[pts.length - 1].slice());
+  return out;
+}
+// vector3 variant for the live 3d view. samples positions in the xz plane;
+// y is interpolated linearly between source waypoints (almost always equal).
+function catmullRom3D(pts3, segments) {
+  if (pts3.length < 2) return pts3.map(p => p.clone());
+  if (pts3.length === 2) return pts3.map(p => p.clone());
+  const flat = pts3.map(p => [p.x, p.z]);
+  const samples = catmullRom2D(flat, segments);
+  const out = [];
+  // walk samples and re-attach a y by interpolating along the original list
+  let srcIdx = 0;
+  for (let i = 0; i < samples.length; i++) {
+    const s = samples[i];
+    while (srcIdx < pts3.length - 2 && i / samples.length > (srcIdx + 1) / (pts3.length - 1)) srcIdx++;
+    const t = (i / samples.length) * (pts3.length - 1) - srcIdx;
+    const y = pts3[srcIdx].y * (1 - t) + pts3[srcIdx + 1].y * t;
+    out.push(new THREE.Vector3(s[0], y, s[1]));
+  }
+  return out;
+}
+
+function rebuildLines() {
+  clearGroup(linesGroup);
+  const corridors = buildCorridors();
+  data.lines.forEach((ln, lineIdx) => {
+    if (ln.waypoints.length === 0) return;
+    // lines are per-plane; hide if their plane is hidden
+    if (planeHidden(ln.waypoints[0].plane)) return;
+    const mat = new THREE.MeshBasicMaterial({ color: ln.color });
+    const group = new THREE.Group();
+    const yLift = 0.04 + lineIdx * Y_STAGGER;
+    const basePositions = ln.waypoints.map((wp, i) => {
+      const o = waypointOffset(ln, i, corridors);
+      const z = data.planes[wp.plane] ? data.planes[wp.plane].z : 0;
+      return new THREE.Vector3(wp.gx + o.x, z + yLift, wp.gy + o.y);
+    });
+    const curveMode = ln.curveMode || (ln.smooth === false ? 'sharp' : 'fillet');
+    let path;
+    if (curveMode === 'spline') path = catmullRom3D(basePositions, 10);
+    else if (curveMode === 'sharp') path = basePositions;
+    else path = smoothCorners(basePositions, radiiForLine(ln), 6);
+    for (let i = 0; i < path.length - 1; i++) {
+      const a = path[i], b = path[i+1];
+      const dir = new THREE.Vector3().subVectors(b, a);
+      const len = dir.length();
+      if (len < 1e-6) continue;
+      const cyl = new THREE.Mesh(new THREE.CylinderGeometry(LINE_RADIUS, LINE_RADIUS, len, 8), mat);
+      cyl.position.copy(a).addScaledVector(dir, 0.5);
+      cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+      // tag for right-click line picking. lineId only, no wpIndex, so the
+      // pickWaypoint heuristic still distinguishes waypoint vs line body.
+      cyl.userData = { lineId: ln.id };
+      group.add(cyl);
+    }
+    for (let i = 0; i < path.length; i++) {
+      const s = new THREE.Mesh(new THREE.SphereGeometry(LINE_RADIUS, 10, 10), mat);
+      s.position.copy(path[i]);
+      s.userData = { lineId: ln.id };
+      group.add(s);
+    }
+    for (let i = 0; i < basePositions.length; i++) {
+      const pick = new THREE.Mesh(new THREE.SphereGeometry(0.19, 10, 10), mat);
+      pick.position.copy(basePositions[i]);
+      pick.userData = { lineId: ln.id, wpIndex: i };
+      group.add(pick);
+    }
+    // subtle outline for the active line so the user can see which one
+    // their next action targets. only rendered on the endpoints to keep it cheap.
+    if (ln.id === activeLineId && basePositions.length >= 1) {
+      const glowMat = new THREE.MeshBasicMaterial({
+        color: ln.color, transparent: true, opacity: 0.35 });
+      const ends = [basePositions[0], basePositions[basePositions.length - 1]];
+      for (const p of ends) {
+        const halo = new THREE.Mesh(new THREE.RingGeometry(0.30, 0.42, 24), glowMat);
+        halo.position.copy(p); halo.position.y += 0.02;
+        halo.rotation.x = -Math.PI / 2;
+        group.add(halo);
+      }
+    }
+    linesGroup.add(group);
+  });
+}
+
+const STATION_SHAPES = ['circle','square','diamond','triangle','plus','ring'];
+function makeStationShape(shape, r, h, color) {
+  const mat = new THREE.MeshBasicMaterial({ color });
+  switch (shape) {
+    case 'square':
+      return new THREE.Mesh(new THREE.BoxGeometry(r * 1.7, h, r * 1.7), mat);
+    case 'diamond': {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(r * 1.6, h, r * 1.6), mat);
+      m.rotation.y = Math.PI / 4;
+      return m;
+    }
+    case 'triangle':
+      return new THREE.Mesh(new THREE.CylinderGeometry(r * 1.15, r * 1.15, h, 3), mat);
+    case 'ring':
+      return new THREE.Mesh(new THREE.TorusGeometry(r * 0.85, r * 0.28, 8, 24), mat);
+    case 'plus': {
+      const grp = new THREE.Group();
+      grp.add(new THREE.Mesh(new THREE.BoxGeometry(r * 2.0, h, r * 0.55), mat));
+      grp.add(new THREE.Mesh(new THREE.BoxGeometry(r * 0.55, h, r * 2.0), mat));
+      return grp;
+    }
+    default:
+      return new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 16), mat);
+  }
+}
+
+function rebuildStations() {
+  clearGroup(stationsGroup);
+  const seen = new Set();
+  for (let li = 0; li < data.lines.length; li++) {
+    const ln = data.lines[li];
+    for (let wi = 0; wi < ln.waypoints.length; wi++) {
+      const wp = ln.waypoints[wi];
+      if (planeHidden(wp.plane)) continue;
+      const key = wp.gx + ',' + wp.gy + ',' + wp.plane;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      let count = 0;
+      for (const ln2 of data.lines) for (const wp2 of ln2.waypoints)
+        if (wp2.gx === wp.gx && wp2.gy === wp.gy && wp2.plane === wp.plane) count++;
+      const station = data.stations.find(s => s.gx === wp.gx && s.gy === wp.gy && s.plane === wp.plane);
+      const shape = (station && station.shape) || 'circle';
+      const isTerminus = (wi === 0 || wi === ln.waypoints.length - 1);
+      let kind = station && station.kind;
+      if (!kind) kind = count > 1 ? 'interchange' : (isTerminus ? 'terminal' : 'regular');
+      const r = kind === 'interchange' ? INTERCHANGE_R :
+                kind === 'terminal' ? STATION_R * 1.4 :
+                kind === 'bend' ? STATION_R * 0.5 : STATION_R;
+      if (shape === 'ring') {
+        const ring = makeStationShape('ring', r, 0.05, 0x111111);
+        ring.position.copy(wpToWorld(wp)); ring.position.y += 0.06;
+        ring.rotation.x = Math.PI / 2;
+        stationsGroup.add(ring);
+        continue;
+      }
+      if (kind === 'bend') {
+        const dot = makeStationShape(shape, r, 0.05, 0x111111);
+        dot.position.copy(wpToWorld(wp)); dot.position.y += 0.06;
+        stationsGroup.add(dot);
+        continue;
+      }
+      const outer = makeStationShape(shape, r, 0.05, 0x111111);
+      outer.position.copy(wpToWorld(wp)); outer.position.y += 0.06;
+      stationsGroup.add(outer);
+      const inner = makeStationShape(shape, r * 0.62, 0.06, 0xffffff);
+      inner.position.copy(outer.position); inner.position.y += 0.006;
+      stationsGroup.add(inner);
+      if (kind === 'interchange') {
+        const center = makeStationShape(shape, r * 0.28, 0.06, 0x111111);
+        center.position.copy(inner.position); center.position.y += 0.001;
+        stationsGroup.add(center);
+      }
+    }
+  }
+}
+
+function rebuildLifts() {
+  clearGroup(liftsGroup);
+  for (const lf of data.lifts) {
+    if (planeHidden(lf.a.plane) || planeHidden(lf.b.plane)) continue;
+    const a = wpToWorld(lf.a), b = wpToWorld(lf.b);
+    const dir = new THREE.Vector3().subVectors(b, a);
+    const len = dir.length();
+    if (len < 1e-6) continue;
+    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, len, 6),
+      new THREE.MeshBasicMaterial({ color: 0x3a3a3a }));
+    cyl.position.copy(a).addScaledVector(dir, 0.5);
+    cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+    liftsGroup.add(cyl);
+  }
+}
+
+function rebuildHover() {
+  clearGroup(editGroup);
+  if (liftPending && mode === 'lift') {
+    const ln = data.lines.find(l => l.id === liftPending.lineId);
+    if (ln) {
+      const wp = ln.waypoints[liftPending.wpIndex];
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.05, 8, 24),
+        new THREE.MeshBasicMaterial({ color: 0x222222 }));
+      ring.position.copy(wpToWorld(wp));
+      ring.rotation.x = Math.PI / 2;
+      editGroup.add(ring);
+    }
+  }
+  if (hoverCell && mode === 'bend') {
+    let best = null, bestD = 0.5;
+    for (let li = 0; li < data.lines.length; li++) {
+      const ln2 = data.lines[li];
+      for (let i = 0; i < ln2.waypoints.length - 1; i++) {
+        const a = ln2.waypoints[i], b = ln2.waypoints[i+1];
+        if (a.plane !== hoverCell.plane || b.plane !== hoverCell.plane) continue;
+        const dx = b.gx - a.gx, dy = b.gy - a.gy;
+        const lenSq = dx*dx + dy*dy;
+        if (lenSq < 1e-6) continue;
+        let t = ((hoverCell.gx - a.gx) * dx + (hoverCell.gy - a.gy) * dy) / lenSq;
+        t = Math.max(0.05, Math.min(0.95, t));
+        const px = a.gx + t * dx, py = a.gy + t * dy;
+        const d = Math.hypot(hoverCell.gx - px, hoverCell.gy - py);
+        if (d < bestD) { bestD = d; best = { lineId: ln2.id, i }; }
+      }
+    }
+    if (best) {
+      const ln2 = data.lines.find(l => l.id === best.lineId);
+      const ghostPos = wpToWorld(hoverCell);
+      const ghost = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 12),
+        new THREE.MeshBasicMaterial({ color: ln2.color, transparent: true, opacity: 0.75 }));
+      ghost.position.copy(ghostPos);
+      editGroup.add(ghost);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.40, 0.05, 8, 24),
+        new THREE.MeshBasicMaterial({ color: ln2.color, transparent: true, opacity: 0.55 }));
+      ring.position.copy(ghostPos); ring.rotation.x = Math.PI / 2;
+      editGroup.add(ring);
+    }
+    return;
+  }
+  if (!hoverCell || mode !== 'draw') return;
+  const ln = data.lines.find(l => l.id === activeLineId);
+  if (!ln) return;
+  const wpPos = wpToWorld(hoverCell);
+  const lastWp = [...ln.waypoints].reverse().find(w => w.plane === hoverCell.plane);
+  if (lastWp) {
+    const dirs = [[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]];
+    for (const [dx, dy] of dirs) {
+      const a = wpToWorld(lastWp);
+      const b = wpToWorld({ gx: lastWp.gx + dx*8, gy: lastWp.gy + dy*8, plane: lastWp.plane });
+      const dir = new THREE.Vector3().subVectors(b, a);
+      const len = dir.length();
+      const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, len, 4),
+        new THREE.MeshBasicMaterial({ color: 0x666666, transparent: true, opacity: 0.25 }));
+      cyl.position.copy(a).addScaledVector(dir, 0.5);
+      cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+      editGroup.add(cyl);
+    }
+    const a = wpToWorld(lastWp);
+    const dir = new THREE.Vector3().subVectors(wpPos, a);
+    const len = dir.length();
+    if (len > 1e-6) {
+      const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, len, 6),
+        new THREE.MeshBasicMaterial({ color: ln.color, transparent: true, opacity: 0.5 }));
+      cyl.position.copy(a).addScaledVector(dir, 0.5);
+      cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+      editGroup.add(cyl);
+    }
+  }
+  const ghost = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 12),
+    new THREE.MeshBasicMaterial({ color: ln.color, transparent: true, opacity: 0.55 }));
+  ghost.position.copy(wpPos);
+  editGroup.add(ghost);
+}
+
+function rebuildSelection() {
+  clearGroup(selectionGroup);
+  for (const sel of selectedWaypoints) {
+    const ln = data.lines.find(l => l.id === sel.lineId);
+    if (!ln) continue;
+    const wp = ln.waypoints[sel.wpIndex];
+    if (!wp) continue;
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.045, 8, 24),
+      new THREE.MeshBasicMaterial({ color: 0xff7a00 }));
+    ring.position.copy(wpToWorld(wp));
+    ring.rotation.x = Math.PI / 2;
+    selectionGroup.add(ring);
+  }
+}
+
+// always-on octolinear angle guides from the active line's last waypoint.
+// renders 8 faint rays radiating in the legal directions so you can see
+// where you'd land regardless of mode.
+function rebuildGuides() {
+  clearGroup(guidesGroup);
+  const ln = data.lines.find(l => l.id === activeLineId);
+  if (!ln || ln.waypoints.length === 0) return;
+  const lastWp = ln.waypoints[ln.waypoints.length - 1];
+  if (planeHidden(lastWp.plane)) return;
+  const dirs = [[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]];
+  for (const [dx, dy] of dirs) {
+    const a = wpToWorld(lastWp);
+    const b = wpToWorld({ gx: lastWp.gx + dx*9, gy: lastWp.gy + dy*9, plane: lastWp.plane });
+    const dir = new THREE.Vector3().subVectors(b, a);
+    const len = dir.length();
+    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, len, 4),
+      new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.18 }));
+    cyl.position.copy(a).addScaledVector(dir, 0.5);
+    cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+    guidesGroup.add(cyl);
+  }
+}
+
+function rebuildAll() {
+  if (activePlane >= data.planes.length) activePlane = Math.max(0, data.planes.length - 1);
+  buildPlanes(); rebuildLines(); rebuildStations(); rebuildLifts();
+  rebuildHover(); rebuildGuides(); rebuildUI(); updateCameraTarget();
+}
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+function setMouse(ev) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
+}
+function pickWaypoint() {
+  const hits = raycaster.intersectObjects(linesGroup.children, true);
+  for (const h of hits) {
+    if (h.object.userData && h.object.userData.lineId !== undefined && h.object.userData.wpIndex !== undefined) {
+      return { lineId: h.object.userData.lineId, wpIndex: h.object.userData.wpIndex };
+    }
+  }
+  return null;
+}
+// picks the line body (cylinder/sphere with userData.lineId but no wpIndex).
+// used by the right-click handler to surface line-level options when the
+// user clicks the line itself rather than a waypoint.
+function pickLine() {
+  const hits = raycaster.intersectObjects(linesGroup.children, true);
+  for (const h of hits) {
+    if (h.object.userData && h.object.userData.lineId !== undefined && h.object.userData.wpIndex === undefined) {
+      return h.object.userData.lineId;
+    }
+  }
+  return null;
+}
+function pickPlaneCell() {
+  if (!planeMeshes[activePlane]) return null;
+  const hits = raycaster.intersectObject(planeMeshes[activePlane]);
+  if (!hits.length) return null;
+  const p = hits[0].point;
+  return { gx: Math.round(p.x), gy: Math.round(p.z), plane: activePlane };
+}
+function octolinearSnap(from, to) {
+  const dx = to.gx - from.gx, dy = to.gy - from.gy;
+  if (dx === 0 || dy === 0) return to;
+  const adx = Math.abs(dx), ady = Math.abs(dy);
+  if (adx === ady) return to;
+  const cs = [
+    { gx: from.gx + dx, gy: from.gy, plane: to.plane },
+    { gx: from.gx, gy: from.gy + dy, plane: to.plane },
+    { gx: from.gx + Math.sign(dx) * Math.min(adx, ady), gy: from.gy + Math.sign(dy) * Math.min(adx, ady), plane: to.plane },
+    { gx: from.gx + Math.sign(dx) * Math.max(adx, ady), gy: from.gy + Math.sign(dy) * Math.max(adx, ady), plane: to.plane },
+  ];
+  let best = cs[0], bestD = 1e9;
+  for (const c of cs) { const d = (c.gx - to.gx) ** 2 + (c.gy - to.gy) ** 2; if (d < bestD) { bestD = d; best = c; } }
+  return best;
+}
+// straighten a line in-place: walk waypoints forward, snapping each one's
+// position relative to its predecessor onto the nearest octolinear axis.
+// the first waypoint stays put; everything downstream re-routes. plane is
+// preserved per-wp.
+function straightenLine(ln) {
+  if (!ln || ln.waypoints.length < 2) return;
+  for (let i = 1; i < ln.waypoints.length; i++) {
+    const prev = ln.waypoints[i - 1];
+    const cur = ln.waypoints[i];
+    if (cur.plane !== prev.plane) continue;
+    const snapped = octolinearSnap(prev, cur);
+    ln.waypoints[i] = { ...cur, gx: snapped.gx, gy: snapped.gy };
+  }
+}
+// rotate / mirror waypoints about their collective centroid (rounded to grid).
+// op = 'r' (rotate 90deg cw, ccw if shift) | 'h' (mirror x) | 'v' (mirror y).
+// targets the current selection if non-empty, else the active line's waypoints.
+// safe to call with no selection and no active line — it silently no-ops.
+function transformSelection(op, ccw) {
+  let targets = [];
+  if (selectedWaypoints && selectedWaypoints.length) {
+    for (const sel of selectedWaypoints) {
+      const ln = data.lines.find(l => l.id === sel.lineId);
+      if (!ln) continue;
+      const w = ln.waypoints[sel.wpIndex];
+      if (!w) continue;
+      targets.push({ ln, idx: sel.wpIndex, w });
+    }
+  } else {
+    const ln = data.lines.find(l => l.id === activeLineId);
+    if (ln) {
+      for (let i = 0; i < ln.waypoints.length; i++) {
+        targets.push({ ln, idx: i, w: ln.waypoints[i] });
+      }
+    }
+  }
+  if (targets.length < 2) return;
+  let cx = 0, cy = 0;
+  for (const t of targets) { cx += t.w.gx; cy += t.w.gy; }
+  cx = Math.round(cx / targets.length);
+  cy = Math.round(cy / targets.length);
+  for (const t of targets) {
+    const rx = t.w.gx - cx, ry = t.w.gy - cy;
+    let nx = rx, ny = ry;
+    if (op === 'r') {
+      if (ccw) { nx = ry; ny = -rx; }
+      else     { nx = -ry; ny = rx; }
+    } else if (op === 'h') { nx = -rx; ny = ry; }
+    else if (op === 'v')   { nx = rx;  ny = -ry; }
+    t.ln.waypoints[t.idx] = { ...t.w, gx: cx + Math.round(nx), gy: cy + Math.round(ny) };
+  }
+  rebuildAll(); rebuildSelection(); refreshPreview();
+}
+
+renderer.domElement.addEventListener('mousemove', (ev) => {
+  setMouse(ev); raycaster.setFromCamera(mouse, camera);
+  if (dragging) {
+    const cell = pickPlaneCell();
+    if (cell) {
+      const ln = data.lines.find(l => l.id === dragging.lineId);
+      if (ln) { ln.waypoints[dragging.wpIndex] = cell; rebuildLines(); rebuildStations(); rebuildHover(); }
+    }
+    return;
+  }
+  const newHover = pickPlaneCell();
+  if (JSON.stringify(newHover) !== JSON.stringify(hoverCell)) {
+    hoverCell = newHover; rebuildHover();
+  }
+});
+renderer.domElement.addEventListener('mouseup', () => { dragging = null; controls.enabled = true; });
+
+// drag-press state for non-select modes: pressing on a waypoint arms a
+// potential drag. on mouseup without movement beyond threshold, falls back
+// to the mode's normal click behavior. on drag, the waypoint moves.
+let dragPress = null;
+const DRAG_PRESS_PX = 4;
+renderer.domElement.addEventListener('mousedown', (ev) => {
+  if (ev.button !== 0) return;
+  setMouse(ev); raycaster.setFromCamera(mouse, camera);
+  if (mode === 'select') return; // handled by separate select listener below
+  if (mode === 'move') {
+    const wp = pickWaypoint();
+    if (wp) { dragging = wp; activeLineId = wp.lineId; rebuildUI(); controls.enabled = false; ev.preventDefault(); return; }
+  }
+  // draw/bend: if the press is on an existing waypoint, arm a deferred drag.
+  // a no-drag release does nothing (preserves prior behavior — clicking on
+  // a waypoint in these modes was previously a no-op).
+  if (mode === 'draw' || mode === 'bend') {
+    const wp = pickWaypoint();
+    if (wp) {
+      dragPress = { wp, x: ev.clientX, y: ev.clientY, dragged: false };
+      controls.enabled = false;
+      ev.preventDefault();
+      return;
+    }
+  }
+  if (mode === 'delete') {
+    const wp = pickWaypoint();
+    if (wp) { const ln = data.lines.find(l => l.id === wp.lineId); ln.waypoints.splice(wp.wpIndex, 1); rebuildAll(); ev.preventDefault(); return; }
+    // no waypoint? maybe they're clicking a lift connector. raycast against liftsGroup.
+    const liftHits = raycaster.intersectObjects(liftsGroup.children, true);
+    if (liftHits.length) {
+      // find the closest lift by 3d midpoint distance to the hit point.
+      const hit = liftHits[0].point;
+      let bestIdx = -1, bestD = Infinity;
+      for (let i = 0; i < data.lifts.length; i++) {
+        const lf = data.lifts[i];
+        const a = wpToWorld(lf.a), b = wpToWorld(lf.b);
+        const mid = a.clone().add(b).multiplyScalar(0.5);
+        const d = mid.distanceTo(hit);
+        if (d < bestD) { bestD = d; bestIdx = i; }
+      }
+      if (bestIdx >= 0) {
+        data.lifts.splice(bestIdx, 1);
+        rebuildAll();
+        ev.preventDefault();
+        return;
+      }
+    }
+  }
+  if (mode === 'draw') {
+    const cell = pickPlaneCell();
+    if (!cell) return;
+    const ln = data.lines.find(l => l.id === activeLineId);
+    if (!ln) return;
+    let target = cell;
+    const lastWp = [...ln.waypoints].reverse().find(w => w.plane === cell.plane);
+    if (lastWp && !ev.shiftKey) target = octolinearSnap(lastWp, cell);
+    ln.waypoints.push(target);
+    rebuildAll(); ev.preventDefault(); return;
+  }
+  if (mode === 'bend') {
+    const cell = pickPlaneCell(); if (!cell) return;
+    let best = null, bestD = 0.5;
+    for (let li = 0; li < data.lines.length; li++) {
+      const ln = data.lines[li];
+      for (let i = 0; i < ln.waypoints.length - 1; i++) {
+        const a = ln.waypoints[i], b = ln.waypoints[i + 1];
+        if (a.plane !== cell.plane || b.plane !== cell.plane) continue;
+        const dx = b.gx - a.gx, dy = b.gy - a.gy;
+        const lenSq = dx*dx + dy*dy;
+        if (lenSq < 1e-6) continue;
+        let t = ((cell.gx - a.gx) * dx + (cell.gy - a.gy) * dy) / lenSq;
+        t = Math.max(0.05, Math.min(0.95, t));
+        const px = a.gx + t * dx, py = a.gy + t * dy;
+        const d = Math.hypot(cell.gx - px, cell.gy - py);
+        if (d < bestD) { bestD = d; best = { li, i }; }
+      }
+    }
+    if (best) {
+      const ln = data.lines[best.li];
+      ln.waypoints.splice(best.i + 1, 0, cell);
+      activeLineId = ln.id;
+      rebuildAll(); ev.preventDefault();
+    }
+    return;
+  }
+  if (mode === 'lift') {
+    const wp = pickWaypoint(); if (!wp) return;
+    if (!liftPending) { liftPending = wp; rebuildHover(); }
+    else {
+      const a = data.lines.find(l => l.id === liftPending.lineId).waypoints[liftPending.wpIndex];
+      const b = data.lines.find(l => l.id === wp.lineId).waypoints[wp.wpIndex];
+      if (a.plane !== b.plane) data.lifts.push({ a: {...a}, b: {...b} });
+      liftPending = null; rebuildAll();
+    }
+    ev.preventDefault();
+  }
+});
+
+// undo/redo via JSON snapshot polling. cheap and works for the entire data
+// object including planes, stations, lifts.
+const history = { undo: [], redo: [], max: 80 };
+let lastSnapshot = JSON.stringify(data);
+function maybePushHistory() {
+  const cur = JSON.stringify(data);
+  if (cur === lastSnapshot) return false;
+  history.undo.push(lastSnapshot);
+  if (history.undo.length > history.max) history.undo.shift();
+  history.redo = [];
+  lastSnapshot = cur;
+  return true;
+}
+function applySnapshot(s) {
+  const r = JSON.parse(s);
+  data.planes = r.planes;
+  data.lines = r.lines;
+  data.stations = r.stations || [];
+  data.lifts = r.lifts || [];
+}
+function doUndo() {
+  maybePushHistory();
+  if (!history.undo.length) return;
+  history.redo.push(JSON.stringify(data));
+  applySnapshot(history.undo.pop());
+  lastSnapshot = JSON.stringify(data);
+  selectedWaypoints = [];
+  closePopover();
+  rebuildAll();
+}
+function doRedo() {
+  if (!history.redo.length) return;
+  history.undo.push(JSON.stringify(data));
+  applySnapshot(history.redo.pop());
+  lastSnapshot = JSON.stringify(data);
+  selectedWaypoints = [];
+  closePopover();
+  rebuildAll();
+}
+setInterval(maybePushHistory, 350);
+
+// right-click context menu. raycasts the click target and offers
+// context-appropriate actions. items vary based on what was clicked:
+// waypoint, lift, plane (empty), or other.
+const ctxmenu = document.getElementById('ctxmenu');
+function closeCtxmenu() { ctxmenu.classList.remove('open'); ctxmenu.innerHTML = ''; }
+function ctxItem(label, fn, cls) {
+  const d = document.createElement('div');
+  d.className = 'ctx-item' + (cls ? ' ' + cls : '');
+  d.textContent = label;
+  d.onclick = () => { closeCtxmenu(); fn(); };
+  return d;
+}
+function ctxSep() { const d = document.createElement('div'); d.className = 'ctx-sep'; return d; }
+function ctxLabel(text) { const d = document.createElement('div'); d.className = 'ctx-label'; d.textContent = text; return d; }
+renderer.domElement.addEventListener('contextmenu', (ev) => {
+  // when alt is held, the right-click is being used to pan via OrbitControls.
+  // suppress the menu (and don't preventDefault so the browser doesn't show
+  // its own context menu either — preventDefault is still safe to call).
+  if (ev.altKey) { ev.preventDefault(); return; }
+  ev.preventDefault();
+  setMouse(ev); raycaster.setFromCamera(mouse, camera);
+  ctxmenu.innerHTML = '';
+  const main = document.getElementById('main').getBoundingClientRect();
+  ctxmenu.style.left = (ev.clientX - main.left) + 'px';
+  ctxmenu.style.top = (ev.clientY - main.top) + 'px';
+  // try to pick a waypoint first
+  const wp = pickWaypoint();
+  if (wp) {
+    const ln = data.lines.find(l => l.id === wp.lineId);
+    const w = ln && ln.waypoints[wp.wpIndex];
+    if (ln && w) {
+      ctxmenu.appendChild(ctxLabel(ln.name + ' / wp ' + wp.wpIndex));
+      ctxmenu.appendChild(ctxItem('open station info', () => {
+        openPopover(w.gx, w.gy, w.plane, ln.id, wp.wpIndex);
+        activeLineId = ln.id; rebuildUI();
+      }));
+      ctxmenu.appendChild(ctxItem('set active line', () => { activeLineId = ln.id; rebuildAll(); }));
+      ctxmenu.appendChild(ctxItem('flip line direction', () => { ln.waypoints.reverse(); rebuildAll(); }));
+      ctxmenu.appendChild(ctxItem('straighten this line', () => { straightenLine(ln); rebuildAll(); }));
+      // segment-level service: toggle whether the segment leaving this
+      // waypoint is abandoned or marked as a maintenance tunnel.
+      if (wp.wpIndex < ln.waypoints.length - 1) {
+        const segOutNow = !!w.segOut;
+        const segMaintNow = !!w.segMaint;
+        ctxmenu.appendChild(ctxItem(
+          segOutNow ? 'restore next segment' : 'mark next segment abandoned',
+          () => { w.segOut = !segOutNow; if (!segOutNow) w.segMaint = false; rebuildAll(); refreshPreview(); }
+        ));
+        ctxmenu.appendChild(ctxItem(
+          segMaintNow ? 'next segment: not maintenance' : 'next segment: maintenance tunnel',
+          () => { w.segMaint = !segMaintNow; if (!segMaintNow) w.segOut = false; rebuildAll(); refreshPreview(); }
+        ));
+      }
+      // line-level service cycle through all four states
+      const svcOrder = ['active', 'reduced', 'maintenance', 'abandoned'];
+      const svcCur = ln.serviceState || 'active';
+      const svcNext = svcOrder[(svcOrder.indexOf(svcCur) + 1) % svcOrder.length];
+      ctxmenu.appendChild(ctxItem('line: ' + svcCur + ' → ' + svcNext, () => {
+        ln.serviceState = svcNext; rebuildAll(); refreshPreview();
+      }));
+      ctxmenu.appendChild(ctxItem('start new line from here', () => {
+        // create a new line whose first waypoint sits exactly on this node.
+        // useful for branching off an existing station/interchange.
+        const id = 'l' + Date.now().toString(36);
+        const used = new Set(data.lines.map(l => l.color));
+        const color = palette.find(c => !used.has(c)) || palette[data.lines.length % palette.length];
+        data.lines.push({ id, name: 'NEW', color, style: 'solid',
+          waypoints: [{ gx: w.gx, gy: w.gy, plane: w.plane }] });
+        activeLineId = id; activePlane = w.plane; mode = 'draw'; rebuildAll();
+      }));
+      ctxmenu.appendChild(ctxItem('branch from here', () => {
+        // new line inherits the parent's color and style. visually reads as
+        // a fork off the original route rather than a new system.
+        const id = 'l' + Date.now().toString(36);
+        data.lines.push({ id, name: (ln.name || 'NEW') + "'", color: ln.color,
+          style: ln.style || 'solid',
+          waypoints: [{ gx: w.gx, gy: w.gy, plane: w.plane }] });
+        activeLineId = id; activePlane = w.plane; mode = 'draw'; rebuildAll();
+      }));
+      ctxmenu.appendChild(ctxSep());
+      ctxmenu.appendChild(ctxItem('delete waypoint', () => {
+        ln.waypoints.splice(wp.wpIndex, 1); rebuildAll();
+      }, 'danger'));
+      ctxmenu.classList.add('open');
+      return;
+    }
+  }
+  // no waypoint? try picking the line body itself. surfaces line-level
+  // controls (style, color, curve, service) without needing to find the
+  // matching row in the sidebar.
+  const lineId = pickLine();
+  if (lineId) {
+    const ln = data.lines.find(l => l.id === lineId);
+    if (ln) {
+      ctxmenu.appendChild(ctxLabel('line ' + ln.name));
+      ctxmenu.appendChild(ctxItem('set active', () => { activeLineId = ln.id; rebuildAll(); }));
+      ctxmenu.appendChild(ctxItem('rename...', () => {
+        const v = prompt('line name', ln.name);
+        if (v != null) { ln.name = v; rebuildAll(); refreshPreview(); }
+      }));
+      ctxmenu.appendChild(ctxItem('change color...', () => {
+        const v = prompt('hex color (e.g. #d62828)', ln.color);
+        if (v && /^#?[0-9a-fA-F]{6}$/.test(v.trim())) {
+          ln.color = v.trim().startsWith('#') ? v.trim() : '#' + v.trim();
+          rebuildAll(); refreshPreview();
+        }
+      }));
+      // style cycle
+      const styleList = ['solid', 'dashed', 'dotted', 'double', 'thin', 'thick'];
+      const curStyleIdx = Math.max(0, styleList.indexOf(ln.style || 'solid'));
+      const nextStyle = styleList[(curStyleIdx + 1) % styleList.length];
+      ctxmenu.appendChild(ctxItem('style: ' + (ln.style || 'solid') + ' → ' + nextStyle, () => {
+        ln.style = nextStyle; rebuildAll(); refreshPreview();
+      }));
+      // curve cycle
+      const curveList = ['fillet', 'spline', 'sharp'];
+      const curCurve = ln.curveMode || (ln.smooth === false ? 'sharp' : 'fillet');
+      const nextCurve = curveList[(curveList.indexOf(curCurve) + 1) % curveList.length];
+      ctxmenu.appendChild(ctxItem('curve: ' + curCurve + ' → ' + nextCurve, () => {
+        ln.curveMode = nextCurve;
+        ln.smooth = nextCurve !== 'sharp';
+        rebuildLines(); refreshPreview();
+      }));
+      // service cycle
+      const svcList = ['active', 'reduced', 'maintenance', 'abandoned'];
+      const curSvc = ln.serviceState || 'active';
+      const nextSvc = svcList[(svcList.indexOf(curSvc) + 1) % svcList.length];
+      ctxmenu.appendChild(ctxItem('service: ' + curSvc + ' → ' + nextSvc, () => {
+        ln.serviceState = nextSvc; rebuildAll(); refreshPreview();
+      }));
+      ctxmenu.appendChild(ctxSep());
+      ctxmenu.appendChild(ctxItem('flip direction', () => { ln.waypoints.reverse(); rebuildAll(); }));
+      ctxmenu.appendChild(ctxItem('straighten', () => { straightenLine(ln); rebuildAll(); }));
+      ctxmenu.appendChild(ctxSep());
+      ctxmenu.appendChild(ctxItem('delete line', () => {
+        if (!confirm('delete line ' + ln.name + '?')) return;
+        data.lines = data.lines.filter(l => l.id !== ln.id);
+        if (activeLineId === ln.id && data.lines.length) activeLineId = data.lines[0].id;
+        rebuildAll();
+      }, 'danger'));
+      ctxmenu.classList.add('open');
+      return;
+    }
+  }
+  // try to pick a lift
+  const liftHits = raycaster.intersectObjects(liftsGroup.children, true);
+  if (liftHits.length) {
+    const hit = liftHits[0].point;
+    let bestIdx = -1, bestD = Infinity;
+    for (let i = 0; i < data.lifts.length; i++) {
+      const lf = data.lifts[i];
+      const mid = wpToWorld(lf.a).clone().add(wpToWorld(lf.b)).multiplyScalar(0.5);
+      const d = mid.distanceTo(hit);
+      if (d < bestD) { bestD = d; bestIdx = i; }
+    }
+    if (bestIdx >= 0) {
+      ctxmenu.appendChild(ctxLabel('lift'));
+      ctxmenu.appendChild(ctxItem('delete lift', () => {
+        data.lifts.splice(bestIdx, 1); rebuildAll();
+      }, 'danger'));
+      ctxmenu.classList.add('open');
+      return;
+    }
+  }
+  // empty plane: offer to start a new line here or change active plane
+  const cell = pickPlaneCell();
+  if (cell) {
+    // probe whether the click is on a line segment — if so, offer
+    // "insert bend here" which splices a new waypoint into the segment.
+    let nearest = null, nearestD = 0.6;
+    for (let li = 0; li < data.lines.length; li++) {
+      const ln2 = data.lines[li];
+      for (let i = 0; i < ln2.waypoints.length - 1; i++) {
+        const a = ln2.waypoints[i], b = ln2.waypoints[i + 1];
+        if (a.plane !== cell.plane || b.plane !== cell.plane) continue;
+        const dx = b.gx - a.gx, dy = b.gy - a.gy;
+        const lenSq = dx*dx + dy*dy;
+        if (lenSq < 1e-6) continue;
+        let t = ((cell.gx - a.gx) * dx + (cell.gy - a.gy) * dy) / lenSq;
+        t = Math.max(0.05, Math.min(0.95, t));
+        const px = a.gx + t * dx, py = a.gy + t * dy;
+        const d = Math.hypot(cell.gx - px, cell.gy - py);
+        if (d < nearestD) { nearestD = d; nearest = { li, i, ln: ln2 }; }
+      }
+    }
+    ctxmenu.appendChild(ctxLabel('plane ' + (cell.plane + 1) + ' / ' + cell.gx + ', ' + cell.gy));
+    if (nearest) {
+      ctxmenu.appendChild(ctxItem('insert bend here on ' + (nearest.ln.name || 'line'), () => {
+        nearest.ln.waypoints.splice(nearest.i + 1, 0, { gx: cell.gx, gy: cell.gy, plane: cell.plane });
+        activeLineId = nearest.ln.id; rebuildAll();
+      }));
+      ctxmenu.appendChild(ctxSep());
+    }
+    ctxmenu.appendChild(ctxItem('start new line here', () => {
+      const id = 'l' + Date.now().toString(36);
+      const used = new Set(data.lines.map(l => l.color));
+      const color = palette.find(c => !used.has(c)) || palette[data.lines.length % palette.length];
+      data.lines.push({ id, name: 'NEW', color, style: 'solid', waypoints: [cell] });
+      activeLineId = id; mode = 'draw'; rebuildAll();
+    }));
+    ctxmenu.appendChild(ctxItem('switch to this plane', () => { activePlane = cell.plane; rebuildAll(); }));
+    ctxmenu.classList.add('open');
+    return;
+  }
+});
+window.addEventListener('mousedown', (ev) => {
+  // close ctxmenu on click anywhere except inside the menu itself
+  if (!ctxmenu.contains(ev.target)) closeCtxmenu();
+});
+
+// title/subtitle wiring. live-bind to data so they round-trip through json.
+data.title = data.title || '';
+data.subtitle = data.subtitle || '';
+data.theme = data.theme || 'cool';
+// theme palettes: paper + plane tints used by the svg export. css variables
+// (above) handle the editor chrome; this table feeds the export.
+const THEMES = {
+  beige: {
+    paper: '#faf8f3',
+    planeTints: ['#f0eadf', '#ece5d6', '#e8e0cd', '#e2d8b8', '#dccda0', '#d6c294'],
+    inkDark: '#1a1a1a', inkSoft: '#6e5d36', planeStroke: '#cdbf9c',
+  },
+  dark: {
+    paper: '#1b1d22',
+    planeTints: ['#2a2d35', '#33363f', '#3c4049', '#454953', '#4e525d', '#575b67'],
+    inkDark: '#e8e4d8', inkSoft: '#b8a878', planeStroke: '#4a4e58',
+  },
+  cool: {
+    paper: '#f4f5f7',
+    planeTints: ['#e6e8ec', '#dde0e7', '#d4d8e2', '#cbd0dd', '#c2c8d8', '#b9c0d3'],
+    inkDark: '#1a2030', inkSoft: '#4a566e', planeStroke: '#a6acbc',
+  },
+  paper: {
+    /* warm cream — clean ivory zine paper feel without beige's yellow warmth */
+    paper: '#f8f4ec',
+    planeTints: ['#ede6d8', '#e2d8c4', '#d7cab0', '#ccbc9c', '#c1ae88', '#b6a074'],
+    inkDark: '#2a2520', inkSoft: '#7a6a4a', planeStroke: '#bba980',
+  },
+  bone: {
+    /* cool ivory, slightly desaturated for a museum-label feel */
+    paper: '#eeece4',
+    planeTints: ['#e2dfd2', '#d6d2c0', '#cac5ae', '#beb89c', '#b2ab8a', '#a69e78'],
+    inkDark: '#1f1e1a', inkSoft: '#5a5444', planeStroke: '#9c9682',
+  },
+  sepia: {
+    paper: '#f0e3c4',
+    planeTints: ['#e8d8b0', '#dec898', '#d4b880', '#cba868', '#c19850', '#b78838'],
+    inkDark: '#3a2410', inkSoft: '#6b4824', planeStroke: '#a8784c',
+  },
+  outrun: {
+    paper: '#0c0d18',
+    planeTints: ['#15172a', '#1b1d34', '#21243e', '#272a48', '#2d3052', '#33365c'],
+    inkDark: '#d8e8ff', inkSoft: '#ff2a90', planeStroke: '#ff2a90',
+  },
+  killengn: {
+    paper: '#0a1416',
+    planeTints: ['#122225', '#172a2e', '#1c3237', '#213a40', '#264249', '#2b4a52'],
+    inkDark: '#c8e8e8', inkSoft: '#2cd4c8', planeStroke: '#2cd4c8',
+  },
+  grivt: {
+    paper: '#c4b89e',
+    planeTints: ['#b8ab90', '#a89b80', '#988b70', '#887b60', '#786b50', '#685b40'],
+    inkDark: '#1a1612', inkSoft: '#6b4d24', planeStroke: '#8b7a5a',
+  },
+  blueprint: {
+    /* shifted lighter so lines and labels read more clearly without
+       losing the cyan-on-blue drafting-paper vibe */
+    paper: '#2d5c8c',
+    planeTints: ['#3568a0', '#3a6eaa', '#3f74b4', '#447abe', '#4980c8', '#4e86d2'],
+    inkDark: '#f0f8ff', inkSoft: '#a8d0f0', planeStroke: '#9cc8ec',
+  },
+};
+function applyTheme(name) {
+  // back-compat: 'cyberpunk' was renamed to 'outrun'.
+  if (name === 'cyberpunk') name = 'outrun';
+  if (!THEMES[name]) name = 'cool';
+  data.theme = name;
+  // beige is the bare :root defaults; every other theme is a [data-theme]
+  // override block. setting attribute to empty unsets it.
+  document.documentElement.setAttribute('data-theme', name === 'beige' ? '' : name);
+  // re-tint existing planes from the theme palette so the 3d view updates.
+  const tints = THEMES[name].planeTints;
+  for (let i = 0; i < data.planes.length; i++) {
+    data.planes[i].tint = tints[i % tints.length];
+  }
+  // rebuildAll is hoisted but accesses globals (linesGroup etc.) that
+  // initialize at top of file — fine at any time. refreshPreview, however,
+  // reads `previewOpen` which is `let`-declared late in the file; calling
+  // it during init throws a TDZ ReferenceError, so guard the call.
+  if (typeof rebuildAll === 'function') rebuildAll();
+  try { refreshPreview(); } catch (e) { /* preview state not yet initialized */ }
+}
+// legend config: defaults to off so the auto-included key only appears on opt-in.
+data.legend = data.legend || { show: false, corner: 'br', endpoints: false };
+if (data.legend.show == null) data.legend.show = false;
+if (!data.legend.corner) data.legend.corner = 'br';
+if (data.legend.endpoints == null) data.legend.endpoints = false;
+const titleInput = document.getElementById('map-title');
+const subtitleInput = document.getElementById('map-subtitle');
+titleInput.value = data.title;
+subtitleInput.value = data.subtitle;
+titleInput.addEventListener('input', () => { data.title = titleInput.value; });
+subtitleInput.addEventListener('input', () => { data.subtitle = subtitleInput.value; });
+// transform buttons. each invokes transformSelection which acts on the
+// current selection if any, falling back to the active line otherwise.
+document.getElementById('xform-rcw').onclick = () => transformSelection('r', false);
+document.getElementById('xform-rccw').onclick = () => transformSelection('r', true);
+document.getElementById('xform-mh').onclick = () => transformSelection('h', false);
+document.getElementById('xform-mv').onclick = () => transformSelection('v', false);
+document.getElementById('xform-straighten').onclick = () => {
+  const ln = data.lines.find(l => l.id === activeLineId);
+  if (ln) { straightenLine(ln); rebuildAll(); refreshPreview(); }
+};
+// theme picker. attach change handler only — full applyTheme() runs rebuildAll
+// which needs other const-declared globals further down the file. instead set
+// the data-theme attribute directly here so the CSS palette swaps; the picker
+// handler invokes full applyTheme once the user actually changes it.
+const themePicker = document.getElementById('theme-picker');
+themePicker.value = data.theme;
+themePicker.addEventListener('change', () => { applyTheme(themePicker.value); });
+// always assert the data-theme attribute on init so the new default (cool)
+// applies its css block instead of falling back to :root beige.
+if (data.theme && data.theme !== 'beige' && THEMES[data.theme]) {
+  document.documentElement.setAttribute('data-theme', data.theme);
+}
+// view preset picker. only the svg export reads data.viewPreset, so changing
+// it just needs to refresh the preview — no rebuild of the 3d scene. there
+// are two pickers wired here: the sidebar one and a duplicate in the live
+// preview header so the user can tweak the angle without crossing the screen.
+data.viewPreset = data.viewPreset || 'iso-ne';
+const viewPicker = document.getElementById('view-picker');
+const viewPickerPreview = document.getElementById('view-picker-preview');
+viewPicker.value = data.viewPreset;
+viewPickerPreview.value = data.viewPreset;
+function setViewPreset(v) {
+  data.viewPreset = v;
+  viewPicker.value = v;
+  viewPickerPreview.value = v;
+  refreshPreview();
+}
+viewPicker.addEventListener('change', () => setViewPreset(viewPicker.value));
+viewPickerPreview.addEventListener('change', () => setViewPreset(viewPickerPreview.value));
+// legend wiring. state lives on data.legend so it round-trips through save/load.
+const legendShow = document.getElementById('legend-show');
+const legendCorner = document.getElementById('legend-corner');
+const legendEndpoints = document.getElementById('legend-endpoints');
+legendShow.checked = !!data.legend.show;
+legendCorner.value = data.legend.corner;
+legendEndpoints.checked = !!data.legend.endpoints;
+legendShow.addEventListener('change', () => { data.legend.show = legendShow.checked; refreshPreview(); });
+legendCorner.addEventListener('change', () => { data.legend.corner = legendCorner.value; refreshPreview(); });
+legendEndpoints.addEventListener('change', () => { data.legend.endpoints = legendEndpoints.checked; refreshPreview(); });
+
+window.addEventListener('keydown', (ev) => {
+  const tag = (ev.target && ev.target.tagName) || '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if ((ev.metaKey || ev.ctrlKey) && ev.key === 'z') {
+    ev.preventDefault();
+    if (ev.shiftKey) doRedo(); else doUndo();
+    return;
+  }
+  if (ev.key === 'd') { mode = 'draw'; rebuildUI(); }
+  if (ev.key === 'b') { mode = 'bend'; rebuildUI(); }
+  if (ev.key === 'm') { mode = 'move'; rebuildUI(); }
+  if (ev.key === 'x') { mode = 'delete'; rebuildUI(); }
+  if (ev.key === 'l') { mode = 'lift'; rebuildUI(); }
+  if (ev.key === 's') { mode = 'select'; rebuildUI(); }
+  if (ev.key === '\\') {
+    // straighten active line (re-snap all waypoints to octolinear axes)
+    const ln = data.lines.find(l => l.id === activeLineId);
+    if (ln) { straightenLine(ln); rebuildAll(); }
+  }
+  for (let i = 1; i <= MAX_PLANES; i++) {
+    if (ev.key === String(i) && i <= data.planes.length) { activePlane = i - 1; rebuildAll(); }
+  }
+  // bracket keys cycle prev/next plane — handy when planes outnumber 1..6
+  // or when the user wants a one-finger toggle.
+  if (ev.key === '[') { activePlane = (activePlane - 1 + data.planes.length) % data.planes.length; rebuildAll(); }
+  if (ev.key === ']') { activePlane = (activePlane + 1) % data.planes.length; rebuildAll(); }
+  if (ev.key === 'Escape') {
+    // escape priorities: cancel lift > close popover > clear selection > undo last waypoint.
+    if (liftPending) { liftPending = null; rebuildHover(); return; }
+    if (popoverState.open) { closePopover(); return; }
+    if (selectedWaypoints.length) { selectedWaypoints = []; rebuildSelection(); return; }
+    const ln = data.lines.find(l => l.id === activeLineId);
+    if (ln && ln.waypoints.length > 0) { ln.waypoints.pop(); rebuildAll(); }
+  }
+  if (ev.key === 'Tab') {
+    ev.preventDefault();
+    const ln = data.lines.find(l => l.id === activeLineId);
+    if (ln && ln.waypoints.length > 1) { ln.waypoints.reverse(); rebuildAll(); }
+  }
+  if ((ev.key === 'Delete' || ev.key === 'Backspace') && selectedWaypoints.length) {
+    const byLine = new Map();
+    for (const sel of selectedWaypoints) {
+      if (!byLine.has(sel.lineId)) byLine.set(sel.lineId, []);
+      byLine.get(sel.lineId).push(sel.wpIndex);
+    }
+    for (const [lineId, idxs] of byLine) {
+      const ln = data.lines.find(l => l.id === lineId);
+      if (!ln) continue;
+      idxs.sort((a, b) => b - a);
+      for (const i of idxs) ln.waypoints.splice(i, 1);
+    }
+    selectedWaypoints = [];
+    rebuildAll(); rebuildSelection();
+  }
+  // mirror / rotate. r/shift+r = rotate +/-90deg about centroid (preserves
+  // octolinear; visually ~60deg in iso projection). h = mirror x, v = mirror y.
+  // operates on the selection when one exists, otherwise on the active line.
+  if (ev.key === 'r' || ev.key === 'R' || ev.key === 'h' || ev.key === 'H' || ev.key === 'v' || ev.key === 'V') {
+    if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA')) return;
+    transformSelection(ev.key.toLowerCase(), ev.shiftKey);
+  }
+});
+
+// sidebar UI
+const sidebarLines = document.getElementById('line-list');
+const sidebarPlanes = document.getElementById('plane-list');
+const modeRow = document.getElementById('mode-row');
+const hud = document.getElementById('hud');
+const zoomReadout = document.getElementById('zoom-readout');
+const LINE_STYLES = ['solid','dashed','dotted','double','thin','thick'];
+
+function isValidHex(s) { return /^#?[0-9a-fA-F]{6}$/.test(s); }
+function normalizeHex(s) { s = s.trim(); if (!s.startsWith('#')) s = '#' + s; return s.toLowerCase(); }
+
+function rebuildUI() {
+  modeRow.innerHTML = '';
+  for (const m of ['draw','bend','move','delete','lift','select']) {
+    const btn = document.createElement('button');
+    btn.className = 'btn' + (mode === m ? ' active' : '');
+    btn.textContent = m;
+    btn.onclick = () => { mode = m; rebuildUI(); };
+    modeRow.appendChild(btn);
+  }
+
+  sidebarPlanes.innerHTML = '';
+  data.planes.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'plane-item' + (activePlane === i ? ' active' : '');
+    row.style.borderLeftColor = p.tint || DEFAULT_TINTS[i % DEFAULT_TINTS.length];
+    row.onclick = () => { activePlane = i; rebuildAll(); };
+
+    const idx = document.createElement('span');
+    idx.style.cssText = 'font-family:monospace;width:12px;text-align:center;opacity:0.7';
+    idx.textContent = i + 1;
+    row.appendChild(idx);
+
+    const eye = document.createElement('button');
+    eye.className = 'btn tiny';
+    eye.style.cssText = 'padding:1px 4px;min-width:20px';
+    eye.textContent = p.hidden ? '·' : 'o';
+    eye.title = p.hidden ? 'show plane' : 'hide plane';
+    eye.onclick = (e) => { e.stopPropagation(); p.hidden = !p.hidden; rebuildAll(); };
+    row.appendChild(eye);
+
+    const name = document.createElement('input');
+    name.type = 'text'; name.value = p.name;
+    name.onclick = (e) => e.stopPropagation();
+    name.onchange = () => { p.name = name.value; };
+    if (p.hidden) name.style.opacity = '0.5';
+    row.appendChild(name);
+
+    const zInp = document.createElement('input');
+    zInp.type = 'number'; zInp.step = '0.2'; zInp.className = 'z-input';
+    zInp.value = p.z.toFixed(1);
+    zInp.onclick = (e) => e.stopPropagation();
+    zInp.onchange = () => { const v = parseFloat(zInp.value); if (!isNaN(v)) { p.z = v; rebuildAll(); } };
+    row.appendChild(zInp);
+
+    const tint = document.createElement('input');
+    tint.type = 'text'; tint.className = 'hex-input';
+    tint.value = p.tint || DEFAULT_TINTS[i % DEFAULT_TINTS.length];
+    tint.onclick = (e) => e.stopPropagation();
+    tint.onchange = () => {
+      if (isValidHex(tint.value)) { p.tint = normalizeHex(tint.value); rebuildAll(); }
+      else tint.value = p.tint || DEFAULT_TINTS[i % DEFAULT_TINTS.length];
+    };
+    row.appendChild(tint);
+
+    if (data.planes.length > 1) {
+      const del = document.createElement('button');
+      del.className = 'btn tiny danger'; del.textContent = 'x';
+      del.onclick = (e) => {
+        e.stopPropagation();
+        if (!confirm('remove plane ' + p.name + '?')) return;
+        data.planes.splice(i, 1);
+        for (const ln of data.lines) {
+          ln.waypoints = ln.waypoints.filter(w => w.plane !== i)
+            .map(w => ({...w, plane: w.plane > i ? w.plane - 1 : w.plane}));
+        }
+        data.lifts = data.lifts.filter(lf => lf.a.plane !== i && lf.b.plane !== i)
+          .map(lf => ({
+            a: {...lf.a, plane: lf.a.plane > i ? lf.a.plane - 1 : lf.a.plane},
+            b: {...lf.b, plane: lf.b.plane > i ? lf.b.plane - 1 : lf.b.plane},
+          }));
+        rebuildAll();
+      };
+      row.appendChild(del);
+    }
+    sidebarPlanes.appendChild(row);
+  });
+
+  sidebarLines.innerHTML = '';
+  for (const ln of data.lines) {
+    const row = document.createElement('div');
+    row.className = 'line-item' + (ln.id === activeLineId ? ' active' : '');
+    row.style.borderLeftColor = ln.color;
+    row.onclick = () => { activeLineId = ln.id; rebuildUI(); };
+    const swatch = document.createElement('span');
+    swatch.className = 'swatch'; swatch.style.background = ln.color;
+    row.appendChild(swatch);
+    const name = document.createElement('input');
+    name.type = 'text'; name.value = ln.name;
+    name.onclick = (e) => e.stopPropagation();
+    name.onchange = () => { ln.name = name.value; };
+    row.appendChild(name);
+    const hex = document.createElement('input');
+    hex.type = 'text'; hex.className = 'hex-input'; hex.value = ln.color;
+    hex.onclick = (e) => e.stopPropagation();
+    hex.onchange = () => {
+      if (isValidHex(hex.value)) { ln.color = normalizeHex(hex.value); rebuildAll(); }
+      else hex.value = ln.color;
+    };
+    row.appendChild(hex);
+    const styleSel = document.createElement('select');
+    styleSel.className = 'style-select'; styleSel.title = 'line style';
+    for (const s of LINE_STYLES) {
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      if ((ln.style || 'solid') === s) opt.selected = true;
+      styleSel.appendChild(opt);
+    }
+    styleSel.onclick = (e) => e.stopPropagation();
+    styleSel.onchange = () => { ln.style = styleSel.value; refreshPreview(); };
+    row.appendChild(styleSel);
+    const radInp = document.createElement('input');
+    radInp.type = 'number'; radInp.step = '0.1'; radInp.min = '0';
+    radInp.className = 'r-input'; radInp.title = 'corner radius';
+    radInp.value = (ln.smoothRadius != null ? ln.smoothRadius : SMOOTH_R).toFixed(1);
+    radInp.onclick = (e) => e.stopPropagation();
+    radInp.onchange = () => { const v = parseFloat(radInp.value); if (!isNaN(v)) { ln.smoothRadius = v; rebuildLines(); } };
+    row.appendChild(radInp);
+    // curve-mode selector: fillet (default rounded corners) / spline
+    // (catmull-rom through all waypoints) / sharp (no smoothing at all).
+    const curveSel = document.createElement('select');
+    curveSel.className = 'style-select'; curveSel.title = 'curve mode';
+    for (const c of ['fillet', 'spline', 'sharp']) {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      const cur = ln.curveMode || (ln.smooth === false ? 'sharp' : 'fillet');
+      if (cur === c) opt.selected = true;
+      curveSel.appendChild(opt);
+    }
+    curveSel.onclick = (e) => e.stopPropagation();
+    curveSel.onchange = () => {
+      ln.curveMode = curveSel.value;
+      // keep the legacy ln.smooth in sync so older saves round-trip cleanly.
+      ln.smooth = curveSel.value !== 'sharp';
+      rebuildLines(); refreshPreview();
+    };
+    row.appendChild(curveSel);
+    // service state is set via right-click on the line itself to keep this
+    // row from overflowing the sidebar. tiny indicator badge if non-active.
+    if (ln.serviceState && ln.serviceState !== 'active') {
+      const badge = document.createElement('span');
+      badge.textContent = ln.serviceState === 'abandoned' ? '⊘' : '~';
+      badge.title = ln.serviceState;
+      badge.style.cssText = 'font-size:11px;color:#888;margin:0 2px';
+      row.appendChild(badge);
+    }
+    const del = document.createElement('button');
+    del.className = 'btn tiny danger'; del.textContent = 'x';
+    del.onclick = (e) => {
+      e.stopPropagation();
+      if (!confirm('delete line ' + ln.name + '?')) return;
+      data.lines = data.lines.filter(l => l.id !== ln.id);
+      if (activeLineId === ln.id && data.lines.length) activeLineId = data.lines[0].id;
+      rebuildAll();
+    };
+    row.appendChild(del);
+    sidebarLines.appendChild(row);
+  }
+}
+
+// station popover for naming, kind, shape, corner radius
+const popover = document.getElementById('popover');
+const popoverName = document.getElementById('popover-name');
+const popoverKind = document.getElementById('popover-kind');
+const popoverShape = document.getElementById('popover-shape');
+const popoverRadius = document.getElementById('popover-radius');
+const popoverRadiusReadout = document.getElementById('popover-radius-readout');
+const popoverBias = document.getElementById('popover-bias');
+const popoverBiasReadout = document.getElementById('popover-bias-readout');
+const popoverSize = document.getElementById('popover-size');
+const popoverSizeReadout = document.getElementById('popover-size-readout');
+const popoverCoord = document.getElementById('popover-coord');
+const popoverState = { open: false, gx: 0, gy: 0, plane: 0, lineId: null, wpIndex: null };
+
+function findOrCreateStation(gx, gy, plane) {
+  let st = data.stations.find(s => s.gx === gx && s.gy === gy && s.plane === plane);
+  if (!st) {
+    st = { id: 's_' + gx + '_' + gy + '_' + plane, gx, gy, plane,
+      name: '', kind: 'regular', shape: 'circle' };
+    data.stations.push(st);
+  }
+  if (!st.shape) st.shape = 'circle';
+  return st;
+}
+function effectiveRadius(ln, wp) {
+  if (!ln || !wp) return SMOOTH_R;
+  if (wp.cornerRadius != null) return wp.cornerRadius;
+  if (ln.smoothRadius != null) return ln.smoothRadius;
+  return SMOOTH_R;
+}
+function openPopover(gx, gy, plane, lineId, wpIndex) {
+  popoverState.open = true;
+  popoverState.gx = gx; popoverState.gy = gy; popoverState.plane = plane;
+  popoverState.lineId = lineId != null ? lineId : null;
+  popoverState.wpIndex = wpIndex != null ? wpIndex : null;
+  const st = findOrCreateStation(gx, gy, plane);
+  popoverName.value = st.name;
+  popoverKind.value = st.kind;
+  popoverShape.value = st.shape || 'circle';
+  const ln = lineId != null ? data.lines.find(l => l.id === lineId) : null;
+  const wp = ln ? ln.waypoints[wpIndex] : null;
+  const r = effectiveRadius(ln, wp);
+  popoverRadius.value = r.toFixed(2);
+  popoverRadiusReadout.textContent = r.toFixed(2);
+  const bias = (wp && wp.offsetBias != null) ? wp.offsetBias : 0;
+  popoverBias.value = bias.toFixed(2);
+  popoverBiasReadout.textContent = bias.toFixed(2);
+  const size = (st.size != null) ? st.size : 1;
+  popoverSize.value = size.toFixed(2);
+  popoverSizeReadout.textContent = size.toFixed(2) + 'x';
+  popoverCoord.textContent = 'plane ' + plane + ' / cell ' + gx + ', ' + gy +
+    (ln ? ' / ' + ln.name : '');
+  popover.classList.add('open');
+  positionPopover();
+  popoverName.focus(); popoverName.select();
+}
+function closePopover() {
+  popoverState.open = false;
+  popover.classList.remove('open');
+}
+function positionPopover() {
+  if (!popoverState.open) return;
+  const wp = { gx: popoverState.gx, gy: popoverState.gy, plane: popoverState.plane };
+  const world = wpToWorld(wp);
+  const ndc = world.clone().project(camera);
+  const rect = renderer.domElement.getBoundingClientRect();
+  const main = document.getElementById('main').getBoundingClientRect();
+  const x = (ndc.x * 0.5 + 0.5) * rect.width;
+  const y = (-ndc.y * 0.5 + 0.5) * rect.height;
+  popover.style.left = (rect.left - main.left + x + 14) + 'px';
+  popover.style.top = (rect.top - main.top + y - 12) + 'px';
+}
+popoverName.addEventListener('input', () => {
+  const st = findOrCreateStation(popoverState.gx, popoverState.gy, popoverState.plane);
+  st.name = popoverName.value;
+});
+popoverKind.addEventListener('change', () => {
+  const st = findOrCreateStation(popoverState.gx, popoverState.gy, popoverState.plane);
+  st.kind = popoverKind.value;
+  rebuildStations();
+});
+popoverShape.addEventListener('change', () => {
+  const st = findOrCreateStation(popoverState.gx, popoverState.gy, popoverState.plane);
+  st.shape = popoverShape.value;
+  rebuildStations();
+});
+popoverRadius.addEventListener('input', () => {
+  const v = parseFloat(popoverRadius.value);
+  popoverRadiusReadout.textContent = v.toFixed(2);
+  if (popoverState.lineId == null) return;
+  const ln = data.lines.find(l => l.id === popoverState.lineId);
+  if (!ln) return;
+  const wp = ln.waypoints[popoverState.wpIndex];
+  if (!wp) return;
+  wp.cornerRadius = v;
+  rebuildLines();
+});
+popoverBias.addEventListener('input', () => {
+  const v = parseFloat(popoverBias.value);
+  popoverBiasReadout.textContent = v.toFixed(2);
+  if (popoverState.lineId == null) return;
+  const ln = data.lines.find(l => l.id === popoverState.lineId);
+  if (!ln) return;
+  const wp = ln.waypoints[popoverState.wpIndex];
+  if (!wp) return;
+  wp.offsetBias = v;
+  rebuildLines(); rebuildStations(); refreshPreview();
+});
+popoverSize.addEventListener('input', () => {
+  const v = parseFloat(popoverSize.value);
+  popoverSizeReadout.textContent = v.toFixed(2) + 'x';
+  const st = findOrCreateStation(popoverState.gx, popoverState.gy, popoverState.plane);
+  st.size = v;
+  rebuildStations(); refreshPreview();
+});
+document.getElementById('popover-close').onclick = closePopover;
+document.getElementById('popover-clear').onclick = () => {
+  const idx = data.stations.findIndex(s => s.gx === popoverState.gx && s.gy === popoverState.gy && s.plane === popoverState.plane);
+  if (idx >= 0) data.stations.splice(idx, 1);
+  popoverName.value = '';
+  closePopover();
+  rebuildStations();
+};
+
+// select mode: single-click waypoint opens popover, drag empty starts marquee
+let marqueeStart = null;
+const marqueeEl = document.getElementById('marquee');
+// select mode click vs drag detection. if the user releases without moving
+// more than threshold px, treat it as a click (open popover). if they move,
+// treat as a drag (move the waypoint to wherever they release).
+let selectPress = null;
+const SELECT_DRAG_PX = 4;
+renderer.domElement.addEventListener('mousedown', (ev) => {
+  if (ev.button !== 0 || mode !== 'select') return;
+  setMouse(ev); raycaster.setFromCamera(mouse, camera);
+  const wp = pickWaypoint();
+  if (wp) {
+    selectPress = { wp, x: ev.clientX, y: ev.clientY, dragged: false, shift: ev.shiftKey };
+    controls.enabled = false;
+    return;
+  }
+  if (!ev.shiftKey) closePopover();
+  const main = document.getElementById('main').getBoundingClientRect();
+  marqueeStart = { x: ev.clientX, y: ev.clientY, shift: ev.shiftKey };
+  marqueeEl.style.left = (ev.clientX - main.left) + 'px';
+  marqueeEl.style.top = (ev.clientY - main.top) + 'px';
+  marqueeEl.style.width = '0px'; marqueeEl.style.height = '0px';
+  marqueeEl.classList.add('active');
+  controls.enabled = false;
+});
+window.addEventListener('mousemove', (ev) => {
+  // draw/bend-mode drag: same threshold pattern as select. once movement
+  // exceeds threshold, treat as wp move and snap to grid cell.
+  if (dragPress) {
+    const dx = ev.clientX - dragPress.x;
+    const dy = ev.clientY - dragPress.y;
+    if (!dragPress.dragged && Math.hypot(dx, dy) > DRAG_PRESS_PX) {
+      dragPress.dragged = true;
+    }
+    if (dragPress.dragged) {
+      setMouse(ev); raycaster.setFromCamera(mouse, camera);
+      const cell = pickPlaneCell();
+      if (cell) {
+        const ln = data.lines.find(l => l.id === dragPress.wp.lineId);
+        if (ln) {
+          ln.waypoints[dragPress.wp.wpIndex] = cell;
+          rebuildLines(); rebuildStations(); rebuildHover();
+        }
+      }
+      return;
+    }
+  }
+  // select-mode drag: once movement exceeds threshold, treat as wp move.
+  if (selectPress) {
+    const dx = ev.clientX - selectPress.x;
+    const dy = ev.clientY - selectPress.y;
+    if (!selectPress.dragged && Math.hypot(dx, dy) > SELECT_DRAG_PX) {
+      selectPress.dragged = true;
+    }
+    if (selectPress.dragged) {
+      setMouse(ev); raycaster.setFromCamera(mouse, camera);
+      const cell = pickPlaneCell();
+      if (cell) {
+        const ln = data.lines.find(l => l.id === selectPress.wp.lineId);
+        if (ln) {
+          ln.waypoints[selectPress.wp.wpIndex] = cell;
+          rebuildLines(); rebuildStations(); rebuildHover();
+        }
+      }
+      return;
+    }
+  }
+  if (!marqueeStart) return;
+  const main = document.getElementById('main').getBoundingClientRect();
+  const x = Math.min(marqueeStart.x, ev.clientX);
+  const y = Math.min(marqueeStart.y, ev.clientY);
+  const w = Math.abs(ev.clientX - marqueeStart.x);
+  const h = Math.abs(ev.clientY - marqueeStart.y);
+  marqueeEl.style.left = (x - main.left) + 'px';
+  marqueeEl.style.top = (y - main.top) + 'px';
+  marqueeEl.style.width = w + 'px';
+  marqueeEl.style.height = h + 'px';
+});
+window.addEventListener('mouseup', (ev) => {
+  if (dragPress) {
+    // a no-drag release in draw/bend just clears the press (preserves prior
+    // no-op behavior for clicking on a waypoint in those modes).
+    dragPress = null;
+    controls.enabled = true;
+    return;
+  }
+  if (selectPress) {
+    const { wp, dragged, shift } = selectPress;
+    if (!dragged) {
+      const ln = data.lines.find(l => l.id === wp.lineId);
+      if (ln) {
+        const w = ln.waypoints[wp.wpIndex];
+        if (shift) {
+          // shift-click: toggle membership without opening popover. lets the
+          // user accumulate a multi-selection for bulk ops.
+          const idx = selectedWaypoints.findIndex(s => s.lineId === wp.lineId && s.wpIndex === wp.wpIndex);
+          if (idx >= 0) selectedWaypoints.splice(idx, 1);
+          else selectedWaypoints.push({ lineId: ln.id, wpIndex: wp.wpIndex });
+          rebuildSelection();
+        } else {
+          openPopover(w.gx, w.gy, w.plane, ln.id, wp.wpIndex);
+          selectedWaypoints = [{ lineId: ln.id, wpIndex: wp.wpIndex }];
+          rebuildSelection();
+        }
+      }
+    }
+    selectPress = null;
+    controls.enabled = true;
+    return;
+  }
+  if (!marqueeStart) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  const x1 = Math.min(marqueeStart.x, ev.clientX) - rect.left;
+  const x2 = Math.max(marqueeStart.x, ev.clientX) - rect.left;
+  const y1 = Math.min(marqueeStart.y, ev.clientY) - rect.top;
+  const y2 = Math.max(marqueeStart.y, ev.clientY) - rect.top;
+  if (Math.abs(x2 - x1) > 4 && Math.abs(y2 - y1) > 4) {
+    const hit = [];
+    for (const ln of data.lines) {
+      for (let i = 0; i < ln.waypoints.length; i++) {
+        const wp = ln.waypoints[i];
+        const world = wpToWorld(wp);
+        const ndc = world.clone().project(camera);
+        const sx = (ndc.x * 0.5 + 0.5) * rect.width;
+        const sy = (-ndc.y * 0.5 + 0.5) * rect.height;
+        if (sx >= x1 && sx <= x2 && sy >= y1 && sy <= y2) {
+          hit.push({ lineId: ln.id, wpIndex: i });
+        }
+      }
+    }
+    if (marqueeStart.shift) {
+      // shift-marquee: union with existing selection, de-duped
+      const key = (s) => s.lineId + '/' + s.wpIndex;
+      const seen = new Set(selectedWaypoints.map(key));
+      for (const h of hit) if (!seen.has(key(h))) selectedWaypoints.push(h);
+    } else {
+      selectedWaypoints = hit;
+    }
+    rebuildSelection();
+  }
+  marqueeEl.classList.remove('active');
+  marqueeStart = null;
+  controls.enabled = true;
+});
+
+// monochrome line styles for B&W export
+const BW_STYLES = [
+  { width: 7,    dash: null,        cap: 'round' },
+  { width: 7,    dash: '20,10',     cap: 'butt'  },
+  { width: 7,    dash: '0.001,14',  cap: 'round' },
+  { width: 7,    dash: '10,7',      cap: 'butt'  },
+  { width: 7,    dash: '18,6,3,6',  cap: 'butt'  },
+  { width: 10,   dash: null,        cap: 'round', stripe: 3 },
+  { width: 3.5,  dash: null,        cap: 'round' },
+  { width: 10,   dash: null,        cap: 'round' },
+];
+function bwStyleForLine(ln, idx) {
+  const i = (ln.bwStyle != null) ? ln.bwStyle :
+            (ln.bwPattern != null) ? ln.bwPattern : idx;
+  return BW_STYLES[i % BW_STYLES.length];
+}
+
+// greyscale mode: each line gets a grey shade + a hatch/stipple pattern overlay
+// patterns are emitted as <pattern> defs and used as the stroke paint server.
+// the table mixes coarse and fine textures with a wide tonal range so adjacent
+// lines never read as "the same". dash adds another differentiation axis.
+const GREY_STYLES = [
+  // 0: deep black solid — anchors the "main" line of the system
+  { width: 9,   pattern: 'solid',         shade: '#101010', dash: null,        cap: 'round' },
+  // 1: coarse 45deg hatch on mid-tone, slow rhythm
+  { width: 10,  pattern: 'diag45',        shade: '#2a2a2a', dash: null,        cap: 'butt'  },
+  // 2: sparse stipple — reads as 'dotted' from a distance
+  { width: 10,  pattern: 'stipple_sparse',shade: '#3c3c3c', dash: null,        cap: 'butt'  },
+  // 3: bayer 50% dither — even-grey texture, no directional bias
+  { width: 10,  pattern: 'bayer50',       shade: '#222222', dash: null,        cap: 'butt'  },
+  // 4: brick — offset rectangles, distinct silhouette
+  { width: 10,  pattern: 'brick',         shade: '#1a1a1a', dash: null,        cap: 'butt'  },
+  // 5: long dash on dark — high-frequency rhythm without overlay
+  { width: 9,   pattern: 'solid',         shade: '#1a1a1a', dash: '22,10',     cap: 'butt'  },
+  // 6: double-stroke (white-cased) thick line — "express line" feel
+  { width: 12,  pattern: 'solid',         shade: '#0a0a0a', dash: null,        cap: 'round', stripe: 4 },
+  // 7: 135deg hatch on light-mid grey — pairs with #1 as a "different direction"
+  { width: 10,  pattern: 'diag135',       shade: '#4e4e4e', dash: null,        cap: 'butt'  },
+  // 8: checker — geometric, high frequency
+  { width: 10,  pattern: 'checker',       shade: '#2a2a2a', dash: null,        cap: 'butt'  },
+  // 9: dense dot grid — reads as a textured "ribbon"
+  { width: 10,  pattern: 'dots',          shade: '#383838', dash: null,        cap: 'butt'  },
+  // 10: short dot-dash on mid grey — like a service line
+  { width: 9,   pattern: 'solid',         shade: '#2e2e2e', dash: '6,4,1,4',   cap: 'butt'  },
+  // 11: medium solid — quiet fallback
+  { width: 8,   pattern: 'solid',         shade: '#5a5a5a', dash: null,        cap: 'round' },
+];
+function greyStyleForLine(ln, idx) {
+  const i = (ln.greyStyle != null) ? ln.greyStyle :
+            (ln.bwStyle != null) ? ln.bwStyle : idx;
+  return GREY_STYLES[i % GREY_STYLES.length];
+}
+
+// per-line style in color mode. user's deliberate stylistic choice.
+const COLOR_STYLES = {
+  solid:  { width: 6.5, dash: null,         cap: 'round' },
+  dashed: { width: 6.5, dash: '14,7',       cap: 'butt'  },
+  dotted: { width: 6.5, dash: '0.001,12',   cap: 'round' },
+  double: { width: 9,   dash: null,         cap: 'round', stripe: 3 },
+  thin:   { width: 3.5, dash: null,         cap: 'round' },
+  thick:  { width: 10,  dash: null,         cap: 'round' },
+};
+
+function exportSvg(opts) {
+  // mode: 'color' (default) | 'mono' (pure b&w, dash/dot patterns) | 'grey' (greyscale + hatch overlays)
+  // backward-compat: opts.bw === true acts like 'mono'
+  let mode = opts && opts.mode;
+  if (!mode) mode = (opts && opts.bw === true) ? 'mono' : 'color';
+  if (mode !== 'color' && mode !== 'mono' && mode !== 'grey') mode = 'color';
+  const bw = (mode === 'mono');
+  const grey = (mode === 'grey');
+  const nocolor = bw || grey;
+  const COS30 = Math.cos(Math.PI/6), SIN30 = Math.sin(Math.PI/6);
+  const COS45 = Math.cos(Math.PI/4), SIN45 = Math.sin(Math.PI/4);
+  const GRID = 46;
+  const PG_PX = 60;
+  // view preset: how the (gx,gy) grid maps to (screen_x, screen_y). 4 iso
+  // corners + 3 alternate projections. each preset is (rotation: 0..3 90deg
+  // grid rotation, a,b,c,d: 2x2 projection matrix from rotated wx,wy to
+  // screen pixels). a flag `flipZ` inverts vertical so flat-views still
+  // honor plane height visually.
+  const VIEW_PRESETS = {
+    'iso-ne':  { rot: 0, a: COS30, b: -COS30, c: SIN30, d: SIN30,   label: 'iso ne' },
+    'iso-nw':  { rot: 1, a: COS30, b: -COS30, c: SIN30, d: SIN30,   label: 'iso nw' },
+    'iso-sw':  { rot: 2, a: COS30, b: -COS30, c: SIN30, d: SIN30,   label: 'iso sw' },
+    'iso-se':  { rot: 3, a: COS30, b: -COS30, c: SIN30, d: SIN30,   label: 'iso se' },
+    'flat':    { rot: 0, a: 1,     b: 0,      c: 0,     d: 1,       label: 'flat / top-down' },
+    'flat-45': { rot: 0, a: COS45, b: -COS45, c: COS45, d: COS45,   label: 'flat rotated 45' },
+    'military':{ rot: 0, a: COS45, b: -COS45, c: SIN45, d: SIN45,   label: 'military 45' },
+    'cabinet': { rot: 0, a: 1,     b: COS30 * 0.5, c: 0, d: SIN30 + 0.5, label: 'cabinet' },
+  };
+  const view = VIEW_PRESETS[data.viewPreset] || VIEW_PRESETS['iso-ne'];
+  // rotate the (gx,gy) grid by 90deg * view.rot before projecting.
+  const rotGrid = (gx, gy) => {
+    let x = gx, y = gy;
+    for (let i = 0; i < view.rot; i++) { const nx = -y, ny = x; x = nx; y = ny; }
+    return [x, y];
+  };
+  const proj = (gx, gy, plane) => {
+    const [rgx, rgy] = rotGrid(gx, gy);
+    const wx = rgx * GRID, wy = rgy * GRID;
+    const z = (data.planes[plane] ? data.planes[plane].z : 0) * PG_PX;
+    return [view.a * wx + view.b * wy, view.c * wx + view.d * wy - z];
+  };
+  const corridors = buildCorridors();
+  const offsetWp = (line, i) => {
+    const w = line.waypoints[i];
+    const o = waypointOffset(line, i, corridors);
+    return [w.gx + o.x, w.gy + o.y];
+  };
+  function linePath(ln) {
+    const grid = ln.waypoints.map((_, i) => offsetWp(ln, i));
+    const curveMode = ln.curveMode || (ln.smooth === false ? 'sharp' : 'fillet');
+    let smoothed;
+    if (curveMode === 'spline') smoothed = catmullRom2D(grid, 12);
+    else if (curveMode === 'sharp') smoothed = grid;
+    else smoothed = smoothCornersFlat(grid, radiiForLine(ln), 6);
+    const plane = ln.waypoints[0].plane;
+    return smoothed.map(p => proj(p[0], p[1], plane));
+  }
+  const allPts = [];
+  for (const ln of data.lines) for (const p of linePath(ln)) allPts.push(p);
+  if (!allPts.length) { alert('add some waypoints first'); return null; }
+  let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+  for (const p of allPts) { minx=Math.min(minx,p[0]); maxx=Math.max(maxx,p[0]); miny=Math.min(miny,p[1]); maxy=Math.max(maxy,p[1]); }
+  const pad = 80; minx -= pad; maxx += pad; miny -= pad; maxy += pad;
+  const theme = (typeof THEMES !== 'undefined' && data.theme && THEMES[data.theme]) ? THEMES[data.theme] : null;
+  const themePaper = theme ? theme.paper : '#faf8f3';
+  const paper = nocolor ? '#ffffff' : themePaper;
+  const lineStroke = bw ? '#111111' : null;
+  const liftStroke = nocolor ? '#444444' : '#3a3a3a';
+  const planeStroke = nocolor ? '#cccccc' : '#cdbf9c';
+  const parts = [
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + minx.toFixed(1) + ' ' +
+      miny.toFixed(1) + ' ' + (maxx-minx).toFixed(1) + ' ' + (maxy-miny).toFixed(1) +
+      '" width="1400" font-family="Inter, Helvetica, Arial, sans-serif">',
+  ];
+  // grey-mode pattern defs: hatch/stipple paint servers used as line strokes.
+  // patternUnits=userSpaceOnUse so the pattern doesn't scale with stroke width.
+  if (grey) {
+    // pattern defs. each pattern uses a transparent background so the line's
+    // grey shade shows through where the pattern's ink ISN'T — this layers
+    // cleanly over the casing+shade and gives the line its identity without
+    // killing its visual mass. coarser scales than the old set so adjacent
+    // diagonals don't moire against each other.
+    parts.push('<defs>' +
+      // 45deg coarse hatch — slow, deliberate rhythm
+      '<pattern id="hatch-diag45" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">' +
+        '<line x1="0" y1="0" x2="0" y2="8" stroke="#0a0a0a" stroke-width="2.8"/>' +
+      '</pattern>' +
+      // 135deg coarse hatch — pairs with 45 as a "different direction"
+      '<pattern id="hatch-diag135" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(-45)">' +
+        '<line x1="0" y1="0" x2="0" y2="8" stroke="#0a0a0a" stroke-width="2.6"/>' +
+      '</pattern>' +
+      // cross-hatch (kept for legacy data) — coarser than the old version
+      '<pattern id="hatch-cross" patternUnits="userSpaceOnUse" width="9" height="9" patternTransform="rotate(45)">' +
+        '<line x1="0" y1="0" x2="0" y2="9" stroke="#0a0a0a" stroke-width="1.8"/>' +
+        '<line x1="0" y1="0" x2="9" y2="0" stroke="#0a0a0a" stroke-width="1.8"/>' +
+      '</pattern>' +
+      // dense dot grid — small dots in a 4x4 cell, reads as textured ribbon
+      '<pattern id="hatch-dots" patternUnits="userSpaceOnUse" width="4" height="4">' +
+        '<circle cx="2" cy="2" r="1.3" fill="#0a0a0a"/>' +
+      '</pattern>' +
+      // sparse stipple — single dot in 7x7 cell, low-density print look
+      '<pattern id="hatch-stipple_sparse" patternUnits="userSpaceOnUse" width="7" height="7">' +
+        '<circle cx="3.5" cy="3.5" r="1.1" fill="#0a0a0a"/>' +
+      '</pattern>' +
+      // bayer-style ordered dither at ~50%. classic 4x4 threshold matrix
+      // rendered as solid squares at the 50% threshold positions.
+      '<pattern id="hatch-bayer50" patternUnits="userSpaceOnUse" width="8" height="8">' +
+        '<rect x="0" y="0" width="2" height="2" fill="#0a0a0a"/>' +
+        '<rect x="4" y="0" width="2" height="2" fill="#0a0a0a"/>' +
+        '<rect x="2" y="2" width="2" height="2" fill="#0a0a0a"/>' +
+        '<rect x="6" y="2" width="2" height="2" fill="#0a0a0a"/>' +
+        '<rect x="0" y="4" width="2" height="2" fill="#0a0a0a"/>' +
+        '<rect x="4" y="4" width="2" height="2" fill="#0a0a0a"/>' +
+        '<rect x="2" y="6" width="2" height="2" fill="#0a0a0a"/>' +
+        '<rect x="6" y="6" width="2" height="2" fill="#0a0a0a"/>' +
+      '</pattern>' +
+      // brick — offset rectangles, 8w x 6h cell. distinct silhouette.
+      '<pattern id="hatch-brick" patternUnits="userSpaceOnUse" width="10" height="6">' +
+        '<rect x="0" y="0" width="10" height="2.6" fill="#0a0a0a"/>' +
+        '<rect x="0" y="3" width="4" height="2.6" fill="#0a0a0a"/>' +
+        '<rect x="6" y="3" width="4" height="2.6" fill="#0a0a0a"/>' +
+      '</pattern>' +
+      // checker — 3x3 squares, reads as fine geometric noise
+      '<pattern id="hatch-checker" patternUnits="userSpaceOnUse" width="6" height="6">' +
+        '<rect x="0" y="0" width="3" height="3" fill="#0a0a0a"/>' +
+        '<rect x="3" y="3" width="3" height="3" fill="#0a0a0a"/>' +
+      '</pattern>' +
+      // vertical stripes (legacy)
+      '<pattern id="hatch-vert" patternUnits="userSpaceOnUse" width="7" height="7">' +
+        '<line x1="0" y1="0" x2="0" y2="7" stroke="#0a0a0a" stroke-width="2.6"/>' +
+      '</pattern>' +
+      // horizontal stripes (legacy)
+      '<pattern id="hatch-horiz" patternUnits="userSpaceOnUse" width="7" height="7">' +
+        '<line x1="0" y1="0" x2="7" y2="0" stroke="#0a0a0a" stroke-width="2.6"/>' +
+      '</pattern>' +
+      // solid pattern (legacy - no overlay rendered when pattern==solid)
+      '<pattern id="hatch-solid" patternUnits="userSpaceOnUse" width="4" height="4">' +
+        '<rect width="4" height="4" fill="#2a2a2a"/>' +
+      '</pattern>' +
+    '</defs>');
+  }
+  parts.push('<rect x="' + minx + '" y="' + miny + '" width="' + (maxx-minx) +
+    '" height="' + (maxy-miny) + '" fill="' + paper + '"/>');
+  data.planes.forEach((p, i) => {
+    const corners = [[-9,-6],[9,-6],[9,7],[-9,7]];
+    const c = corners.map(c => proj(c[0], c[1], i)).map(pp => pp.join(',')).join(' ');
+    let planeFill;
+    if (bw) planeFill = '#' + (255 - i * 10).toString(16).padStart(2,'0').repeat(3);
+    else if (grey) planeFill = '#' + (245 - i * 14).toString(16).padStart(2,'0').repeat(3);
+    else planeFill = (p.tint || DEFAULT_TINTS[i % DEFAULT_TINTS.length]);
+    parts.push('<polygon points="' + c + '" fill="' + planeFill +
+      '" stroke="' + planeStroke + '" stroke-width="0.6" opacity="' + (nocolor ? '0.45' : '0.6') + '"/>');
+  });
+  for (const lf of data.lifts) {
+    const a = proj(lf.a.gx, lf.a.gy, lf.a.plane);
+    const b = proj(lf.b.gx, lf.b.gy, lf.b.plane);
+    parts.push('<line x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) +
+      '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) +
+      '" stroke="' + liftStroke + '" stroke-width="2.4" stroke-dasharray="3.5,3" stroke-linecap="round"/>');
+  }
+  for (let li = 0; li < data.lines.length; li++) {
+    const ln = data.lines[li];
+    if (ln.waypoints.length < 2) continue;
+    let style;
+    if (bw) style = bwStyleForLine(ln, li);
+    else if (grey) style = greyStyleForLine(ln, li);
+    else style = (COLOR_STYLES[ln.style || 'solid'] || COLOR_STYLES.solid);
+    // service state. line-level takes precedence; per-waypoint segment flags
+    // wp.segOut (abandoned) and wp.segMaint (maintenance) override per-segment.
+    // build runs of consecutive waypoints sharing the same segment-state.
+    const lineService = ln.serviceState || 'active';
+    const wps = ln.waypoints;
+    const segState = (w) => w.segOut ? 'out' : (w.segMaint ? 'maint' : 'normal');
+    const runs = [];
+    {
+      let cur = [wps[0]];
+      let curState = segState(wps[0]);
+      for (let wi = 1; wi < wps.length; wi++) {
+        cur.push(wps[wi]);
+        const isLast = wi === wps.length - 1;
+        const nextState = segState(wps[wi]);
+        if (!isLast && nextState !== curState) {
+          runs.push({ wps: cur, state: curState });
+          cur = [wps[wi]];
+          curState = nextState;
+        }
+      }
+      runs.push({ wps: cur, state: curState });
+    }
+    for (const run of runs) {
+      if (run.wps.length < 2) continue;
+      const virtLn = { ...ln, waypoints: run.wps };
+      const pts = linePath(virtLn);
+      const d = pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+      // effective state = combination of line-level + segment-level
+      const isAbandoned = lineService === 'abandoned' || run.state === 'out';
+      const isMaint = !isAbandoned && (lineService === 'maintenance' || run.state === 'maint');
+      const isReduced = !isAbandoned && !isMaint && lineService === 'reduced';
+      // casing only for normal/reduced runs — abandoned + maintenance blend
+      // into the paper rather than punching a clean stripe through the map.
+      if (!isAbandoned && !isMaint) {
+        const casingW = Math.max(11, style.width + 4);
+        parts.push('<polyline points="' + d + '" fill="none" stroke="' + paper +
+          '" stroke-width="' + casingW + '" stroke-linecap="round" stroke-linejoin="round"/>');
+      }
+      let stroke;
+      if (bw) stroke = lineStroke;
+      else if (grey) stroke = style.shade;
+      else stroke = ln.color;
+      if (isAbandoned) stroke = '#7a7a7a';
+      else if (isMaint) stroke = nocolor ? '#444444' : '#7a6440';
+      const lineOpacity = isAbandoned ? 0.55 : isMaint ? 0.78 : (isReduced ? 0.75 : 1);
+      const lineWidth = isAbandoned ? Math.max(3, style.width * 0.55)
+                      : isMaint     ? Math.max(2.5, style.width * 0.42)
+                      : isReduced   ? Math.max(3, style.width * 0.75)
+                      : style.width;
+      // dash patterns chosen for distinct rhythm: abandoned = long-long,
+      // maintenance = dash-dot (like a utility/access tunnel on blueprints).
+      const dashAttr = isAbandoned ? ' stroke-dasharray="6,5"'
+                     : isMaint     ? ' stroke-dasharray="8,3,2,3"'
+                     : (style.dash ? ' stroke-dasharray="' + style.dash + '"' : '');
+      parts.push('<polyline points="' + d + '" fill="none" stroke="' + stroke +
+        '" stroke-width="' + lineWidth + '" stroke-linecap="' + (isAbandoned || isMaint ? 'butt' : style.cap) +
+        '" stroke-linejoin="round"' + dashAttr +
+        (lineOpacity < 1 ? ' opacity="' + lineOpacity + '"' : '') + '/>');
+      if (!isAbandoned && !isMaint) {
+        if (grey && style.pattern && style.pattern !== 'solid') {
+          const overlayW = Math.max(2, style.width - 1.5);
+          parts.push('<polyline points="' + d + '" fill="none" stroke="url(#hatch-' +
+            style.pattern + ')" stroke-width="' + overlayW +
+            '" stroke-linecap="' + style.cap + '" stroke-linejoin="round" opacity="' +
+            (isReduced ? 0.7 : 0.92) + '"/>');
+        }
+        if (style.stripe) {
+          parts.push('<polyline points="' + d + '" fill="none" stroke="' + paper +
+            '" stroke-width="' + style.stripe + '" stroke-linecap="' + style.cap +
+            '" stroke-linejoin="round"/>');
+        }
+      }
+    }
+  }
+  // station markers. precompute line geometry in screen space so we can
+  // score label-placement candidates against line clearance.
+  const allLineSegs = [];
+  for (const ln of data.lines) {
+    if (ln.waypoints.length < 2) continue;
+    const pts = linePath(ln);
+    for (let pi = 0; pi < pts.length - 1; pi++) {
+      allLineSegs.push({ a: pts[pi], b: pts[pi + 1] });
+    }
+  }
+  const placedLabels = [];
+  const pointToSegmentDist = (px, py, ax, ay, bx, by) => {
+    const dx = bx - ax, dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    if (len2 < 1e-6) return Math.hypot(px - ax, py - ay);
+    let t = ((px - ax) * dx + (py - ay) * dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+  };
+  // best-quadrant label placement: examine 8 candidate positions around the
+  // marker, score each by clearance to nearby lines + already-placed labels,
+  // pick the freest. larger score is better. text-anchor varies per quadrant
+  // so the label always reads outward.
+  function placeLabel(name, cx, cy, mr) {
+    const labelW = Math.min(name.length * 6.5, 140);
+    const labelH = 12;
+    const dx = mr + 5;
+    const dy = mr + 7;
+    const dd = mr * 0.75 + 4;
+    const candidates = [
+      // [name, x, y, anchor, dy-baseline-offset]
+      { x: cx + dx,  y: cy + 4,  anchor: 'start' },   // E
+      { x: cx - dx,  y: cy + 4,  anchor: 'end' },     // W
+      { x: cx,       y: cy - dy, anchor: 'middle' },  // N
+      { x: cx,       y: cy + dy + 4, anchor: 'middle' }, // S
+      { x: cx + dd,  y: cy - dd, anchor: 'start' },   // NE
+      { x: cx - dd,  y: cy - dd, anchor: 'end' },     // NW
+      { x: cx + dd,  y: cy + dd + 4, anchor: 'start' },   // SE
+      { x: cx - dd,  y: cy + dd + 4, anchor: 'end' },     // SW
+    ];
+    let best = candidates[0], bestScore = -Infinity;
+    for (const c of candidates) {
+      // approx label bbox based on anchor
+      let bx;
+      if (c.anchor === 'start') bx = c.x;
+      else if (c.anchor === 'end') bx = c.x - labelW;
+      else bx = c.x - labelW / 2;
+      const by = c.y - labelH;
+      const bw = labelW, bh = labelH;
+      // score: min distance from label rect to any line segment or placed label.
+      let minClear = 1e9;
+      const samples = [
+        [bx, by], [bx + bw, by],
+        [bx, by + bh], [bx + bw, by + bh],
+        [bx + bw / 2, by + bh / 2],
+      ];
+      for (const [px, py] of samples) {
+        for (const seg of allLineSegs) {
+          const d = pointToSegmentDist(px, py, seg.a[0], seg.a[1], seg.b[0], seg.b[1]);
+          if (d < minClear) minClear = d;
+        }
+        for (const pl of placedLabels) {
+          // box-box rough distance
+          const ddx = Math.max(pl.x - px, 0, px - (pl.x + pl.w));
+          const ddy = Math.max(pl.y - py, 0, py - (pl.y + pl.h));
+          const d = Math.hypot(ddx, ddy);
+          if (d < minClear) minClear = d;
+        }
+      }
+      // slight bias toward E (matches the legacy default for a tie)
+      const bias = (c.anchor === 'start' && Math.abs(c.y - cy - 4) < 1) ? 0.5 : 0;
+      const score = minClear + bias;
+      if (score > bestScore) { bestScore = score; best = { ...c, bx, by, bw, bh }; }
+    }
+    placedLabels.push({ x: best.bx, y: best.by, w: best.bw, h: best.bh });
+    return best;
+  }
+  // pre-compute, per station, the list of tangent angles from each line
+  // passing through. used to orient pills/hexes/etc along the dominant flow
+  // direction. angles are mod PI so opposing exits don't cancel.
+  const stationAxis = new Map();
+  for (const ln of data.lines) {
+    for (let i = 0; i < ln.waypoints.length; i++) {
+      const wp = ln.waypoints[i];
+      const k = wp.gx + ',' + wp.gy + ',' + wp.plane;
+      const [sxp, syp] = proj(wp.gx, wp.gy, wp.plane);
+      const neighbors = [];
+      if (i > 0 && ln.waypoints[i-1].plane === wp.plane) {
+        const w2 = ln.waypoints[i-1];
+        const [nx, ny] = proj(w2.gx, w2.gy, w2.plane);
+        neighbors.push([nx - sxp, ny - syp]);
+      }
+      if (i < ln.waypoints.length - 1 && ln.waypoints[i+1].plane === wp.plane) {
+        const w2 = ln.waypoints[i+1];
+        const [nx, ny] = proj(w2.gx, w2.gy, w2.plane);
+        neighbors.push([nx - sxp, ny - syp]);
+      }
+      let arr = stationAxis.get(k);
+      if (!arr) { arr = []; stationAxis.set(k, arr); }
+      for (const [dx, dy] of neighbors) {
+        let a = Math.atan2(dy, dx);
+        // fold to [0, PI) since direction is bidirectional for orientation
+        if (a < 0) a += Math.PI;
+        if (a >= Math.PI) a -= Math.PI;
+        arr.push(a);
+      }
+    }
+  }
+  // bidirectional mean of angles via doubled-angle trick: average
+  // (cos 2a, sin 2a) then halve. handles wraparound correctly.
+  function stationDominantAngle(k) {
+    const arr = stationAxis.get(k);
+    if (!arr || !arr.length) return 0;
+    let sx = 0, sy = 0;
+    for (const a of arr) { sx += Math.cos(2*a); sy += Math.sin(2*a); }
+    return Math.atan2(sy, sx) / 2;
+  }
+  const seen = new Set();
+  for (let li = 0; li < data.lines.length; li++) {
+    const ln = data.lines[li];
+    for (let i = 0; i < ln.waypoints.length; i++) {
+      const wp = ln.waypoints[i];
+      const k = wp.gx + ',' + wp.gy + ',' + wp.plane;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      const [x, y] = proj(wp.gx, wp.gy, wp.plane);
+      let count = 0;
+      for (const ln2 of data.lines) for (const wp2 of ln2.waypoints)
+        if (wp2.gx === wp.gx && wp2.gy === wp.gy && wp2.plane === wp.plane) count++;
+      const station = data.stations.find(s => s.gx === wp.gx && s.gy === wp.gy && s.plane === wp.plane);
+      const shape = (station && station.shape) || 'circle';
+      const isTerminus = (i === 0 || i === ln.waypoints.length - 1);
+      let kind = station && station.kind;
+      if (!kind) kind = count > 1 ? 'interchange' : (isTerminus ? 'terminal' : 'regular');
+      // size scaling: kind sets base, station.size overrides, interchanges
+      // also auto-bump by line count so 4+ junctions read as more important.
+      let r = kind === 'interchange' ? 9 : kind === 'terminal' ? 7 : kind === 'bend' ? 3 : 5.5;
+      const userSize = (station && station.size != null) ? station.size : 1;
+      const interchangeBump = kind === 'interchange' ? (1 + Math.max(0, count - 2) * 0.10) : 1;
+      r = r * userSize * interchangeBump;
+      const axisAngle = stationDominantAngle(k);
+      const axisDeg = axisAngle * 180 / Math.PI;
+      // inner renders a single shape. pill/stadium/hex/cluster honor axis
+      // angle so the shape lies along the dominant line flow.
+      const inner = (sh, cx, cy, R, fill, count1) => {
+        if (sh === 'square') return '<rect x="' + (cx-R).toFixed(1) + '" y="' + (cy-R).toFixed(1) + '" width="' + (R*2).toFixed(1) + '" height="' + (R*2).toFixed(1) + '" fill="' + fill + '"/>';
+        if (sh === 'diamond') {
+          const pts = [[cx,cy-R],[cx+R,cy],[cx,cy+R],[cx-R,cy]].map(p => p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+          return '<polygon points="' + pts + '" fill="' + fill + '"/>';
+        }
+        if (sh === 'triangle') {
+          const pts = [[cx,cy-R],[cx+R*0.866,cy+R*0.5],[cx-R*0.866,cy+R*0.5]].map(p => p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+          return '<polygon points="' + pts + '" fill="' + fill + '"/>';
+        }
+        if (sh === 'plus') {
+          const t = R*0.35;
+          return '<path d="M' + (cx-R).toFixed(1) + ' ' + (cy-t).toFixed(1) + ' h' + (R-t).toFixed(1) + ' v-' + (R-t).toFixed(1) + ' h' + (2*t).toFixed(1) + ' v' + (R-t).toFixed(1) + ' h' + (R-t).toFixed(1) + ' v' + (2*t).toFixed(1) + ' h-' + (R-t).toFixed(1) + ' v' + (R-t).toFixed(1) + ' h-' + (2*t).toFixed(1) + ' v-' + (R-t).toFixed(1) + ' h-' + (R-t).toFixed(1) + ' z" fill="' + fill + '"/>';
+        }
+        if (sh === 'ring') return '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + R.toFixed(1) + '" fill="none" stroke="#111" stroke-width="2.4"/>';
+        if (sh === 'pill' || sh === 'pill_v' || sh === 'stadium') {
+          // capsule sized so it spans all incoming lines + a small margin.
+          // pill length grows with line count to read as a "merged" junction.
+          const lengthMul = sh === 'stadium' ? 3.2 : (2.2 + Math.max(0, (count1 || count) - 2) * 0.5);
+          const len = R * lengthMul;
+          const w = R * 1.5;
+          let rot = axisDeg;
+          if (sh === 'pill_v') rot += 90;
+          const rect = '<rect x="' + (cx - len/2).toFixed(1) + '" y="' + (cy - w/2).toFixed(1) +
+            '" width="' + len.toFixed(1) + '" height="' + w.toFixed(1) +
+            '" rx="' + (w/2).toFixed(1) + '" fill="' + fill + '"/>';
+          return '<g transform="rotate(' + rot.toFixed(1) + ',' + cx.toFixed(1) + ',' + cy.toFixed(1) + ')">' + rect + '</g>';
+        }
+        if (sh === 'hex') {
+          const pts = [];
+          for (let kk = 0; kk < 6; kk++) {
+            const t = axisAngle + kk * Math.PI / 3;
+            pts.push([cx + R*1.15*Math.cos(t), cy + R*1.15*Math.sin(t)]);
+          }
+          return '<polygon points="' + pts.map(p => p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ') + '" fill="' + fill + '"/>';
+        }
+        if (sh === 'cluster') {
+          // n overlapping circles, distributed around the centroid along
+          // the perpendicular axis. n = min(count, 4).
+          const n = Math.min(Math.max(count1 || count, 2), 4);
+          const perp = axisAngle + Math.PI / 2;
+          const spread = R * 0.55;
+          const out = [];
+          for (let kk = 0; kk < n; kk++) {
+            const t = (kk - (n - 1) / 2) / Math.max(1, n - 1);
+            const ox = Math.cos(perp) * spread * t * 2;
+            const oy = Math.sin(perp) * spread * t * 2;
+            out.push('<circle cx="' + (cx + ox).toFixed(1) + '" cy="' + (cy + oy).toFixed(1) +
+              '" r="' + (R * 0.72).toFixed(1) + '" fill="' + fill + '"/>');
+          }
+          return out.join('');
+        }
+        return '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + R.toFixed(1) + '" fill="' + fill + '"/>';
+      };
+      // special kinds override the generic shape rendering — depot / maintenance /
+      // abandoned get bespoke glyphs since they communicate function not identity.
+      if (kind === 'depot') {
+        // depot: a long oriented rectangle with internal "track" stripes,
+        // reads as a parking shed where trains are stored.
+        const len = r * 3.4, w = r * 1.9;
+        const rotS = '<g transform="rotate(' + axisDeg.toFixed(1) + ',' + x.toFixed(1) + ',' + y.toFixed(1) + ')">';
+        const inner1 = '<rect x="' + (x - len/2).toFixed(1) + '" y="' + (y - w/2).toFixed(1) +
+          '" width="' + len.toFixed(1) + '" height="' + w.toFixed(1) +
+          '" rx="2" fill="#fff" stroke="#111" stroke-width="2"/>';
+        let stripes = '';
+        for (const off of [-w/3, 0, w/3]) {
+          stripes += '<line x1="' + (x - len/2 + 3).toFixed(1) + '" y1="' + (y + off).toFixed(1) +
+            '" x2="' + (x + len/2 - 3).toFixed(1) + '" y2="' + (y + off).toFixed(1) +
+            '" stroke="#111" stroke-width="0.9"/>';
+        }
+        // tiny entry notch on each end to suggest tunnel openings
+        const notch = (cx) => '<rect x="' + (cx - 2).toFixed(1) + '" y="' + (y - w/2 + 1).toFixed(1) +
+          '" width="4" height="' + (w - 2).toFixed(1) + '" fill="' + (nocolor ? '#ddd' : '#e8dbb6') + '"/>';
+        parts.push(rotS + inner1 + notch(x - len/2 + 3) + notch(x + len/2 - 3) + stripes + '</g>');
+      } else if (kind === 'maintenance') {
+        // maintenance bay: square with an X-strikethrough — universal
+        // workshop / "service" indicator. small cog notches on the corners
+        // hint at machinery.
+        const sz = r * 1.9;
+        parts.push('<rect x="' + (x - sz/2).toFixed(1) + '" y="' + (y - sz/2).toFixed(1) +
+          '" width="' + sz.toFixed(1) + '" height="' + sz.toFixed(1) +
+          '" fill="#fff" stroke="#111" stroke-width="2"/>');
+        // X mark
+        const xo = sz * 0.32;
+        parts.push('<line x1="' + (x - xo).toFixed(1) + '" y1="' + (y - xo).toFixed(1) +
+          '" x2="' + (x + xo).toFixed(1) + '" y2="' + (y + xo).toFixed(1) +
+          '" stroke="#111" stroke-width="1.8" stroke-linecap="round"/>');
+        parts.push('<line x1="' + (x - xo).toFixed(1) + '" y1="' + (y + xo).toFixed(1) +
+          '" x2="' + (x + xo).toFixed(1) + '" y2="' + (y - xo).toFixed(1) +
+          '" stroke="#111" stroke-width="1.8" stroke-linecap="round"/>');
+        // corner gear-teeth ticks
+        for (const [tx, ty] of [[-sz/2-2,-sz/2-2],[sz/2+2,-sz/2-2],[-sz/2-2,sz/2+2],[sz/2+2,sz/2+2]]) {
+          parts.push('<rect x="' + (x + tx - 0.8).toFixed(1) + '" y="' + (y + ty - 0.8).toFixed(1) +
+            '" width="1.6" height="1.6" fill="#111"/>');
+        }
+      } else if (kind === 'abandoned') {
+        // abandoned: dashed outline + diagonal strike. low-contrast so it
+        // reads as "still here but inactive". no inner fill.
+        parts.push('<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) +
+          '" r="' + (r * 1.25).toFixed(1) + '" fill="none" stroke="#777" stroke-width="1.6" stroke-dasharray="3,2.5"/>');
+        const so = r * 0.95;
+        parts.push('<line x1="' + (x - so).toFixed(1) + '" y1="' + (y - so).toFixed(1) +
+          '" x2="' + (x + so).toFixed(1) + '" y2="' + (y + so).toFixed(1) +
+          '" stroke="#888" stroke-width="2" stroke-linecap="round"/>');
+      } else if (kind === 'construction') {
+        // construction: a diamond outline filled with diagonal hazard stripes.
+        // strong visual cue for "this is being built" without naming it.
+        const R = r * 1.3;
+        // build hazard-stripe pattern id unique enough to avoid collision
+        parts.push('<defs><pattern id="hz' + Math.floor(x*7+y*3) + '" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">' +
+          '<rect width="3" height="6" fill="#f5b800"/><rect x="3" width="3" height="6" fill="#1a1a1a"/></pattern></defs>');
+        const dpts = [[x,y-R],[x+R,y],[x,y+R],[x-R,y]].map(p => p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+        parts.push('<polygon points="' + dpts + '" fill="url(#hz' + Math.floor(x*7+y*3) + ')" stroke="#1a1a1a" stroke-width="2"/>');
+      } else if (kind === 'signal_yard') {
+        // signal yard: 3 parallel short bars (representing tracks) with a
+        // diamond at center suggesting an interlocking. very technical look.
+        const len = r * 3.2;
+        const rotS = '<g transform="rotate(' + axisDeg.toFixed(1) + ',' + x.toFixed(1) + ',' + y.toFixed(1) + ')">';
+        let g = rotS;
+        for (const off of [-r*0.7, 0, r*0.7]) {
+          g += '<line x1="' + (x - len/2).toFixed(1) + '" y1="' + (y + off).toFixed(1) +
+            '" x2="' + (x + len/2).toFixed(1) + '" y2="' + (y + off).toFixed(1) +
+            '" stroke="#111" stroke-width="1.6" stroke-linecap="round"/>';
+        }
+        // crossover diagonals
+        g += '<line x1="' + (x - r*0.4).toFixed(1) + '" y1="' + (y - r*0.7).toFixed(1) +
+          '" x2="' + (x + r*0.4).toFixed(1) + '" y2="' + (y + r*0.7).toFixed(1) +
+          '" stroke="#111" stroke-width="1.6"/>';
+        g += '<line x1="' + (x - r*0.4).toFixed(1) + '" y1="' + (y + r*0.7).toFixed(1) +
+          '" x2="' + (x + r*0.4).toFixed(1) + '" y2="' + (y - r*0.7).toFixed(1) +
+          '" stroke="#111" stroke-width="1.6"/>';
+        // central diamond
+        const dR = r * 0.45;
+        const dpts2 = [[x,y-dR],[x+dR,y],[x,y+dR],[x-dR,y]].map(p => p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+        g += '<polygon points="' + dpts2 + '" fill="#fff" stroke="#111" stroke-width="1.8"/>';
+        g += '</g>';
+        parts.push(g);
+      } else if (kind === 'control_tower') {
+        // control tower: square base with a rectangular spire on top.
+        // reads as a control building / signal box.
+        const sz = r * 1.5;
+        const baseY = y + sz * 0.3;
+        parts.push('<rect x="' + (x - sz/2).toFixed(1) + '" y="' + (baseY - sz/2).toFixed(1) +
+          '" width="' + sz.toFixed(1) + '" height="' + sz.toFixed(1) +
+          '" fill="#fff" stroke="#111" stroke-width="2"/>');
+        // tower top
+        parts.push('<rect x="' + (x - sz * 0.22).toFixed(1) + '" y="' + (baseY - sz * 1.0).toFixed(1) +
+          '" width="' + (sz * 0.44).toFixed(1) + '" height="' + (sz * 0.5).toFixed(1) +
+          '" fill="#111"/>');
+        // antenna dot
+        parts.push('<circle cx="' + x.toFixed(1) + '" cy="' + (baseY - sz * 1.1).toFixed(1) +
+          '" r="1.4" fill="#111"/>');
+        // window slot
+        parts.push('<rect x="' + (x - sz * 0.3).toFixed(1) + '" y="' + (baseY - sz * 0.15).toFixed(1) +
+          '" width="' + (sz * 0.6).toFixed(1) + '" height="' + (sz * 0.18).toFixed(1) +
+          '" fill="#111"/>');
+      } else if (kind === 'platform') {
+        // platform: long thin oriented bar with two tick marks on each end.
+        // reads as a passenger waiting area along a line.
+        const len = r * 3.6, w = r * 0.6;
+        const rotS = '<g transform="rotate(' + axisDeg.toFixed(1) + ',' + x.toFixed(1) + ',' + y.toFixed(1) + ')">';
+        let g = rotS;
+        g += '<rect x="' + (x - len/2).toFixed(1) + '" y="' + (y - w/2).toFixed(1) +
+          '" width="' + len.toFixed(1) + '" height="' + w.toFixed(1) +
+          '" rx="' + (w/2).toFixed(1) + '" fill="#111"/>';
+        // end ticks
+        for (const ex of [-len/2 - 3, len/2 + 3]) {
+          g += '<line x1="' + (x + ex).toFixed(1) + '" y1="' + (y - w*1.4).toFixed(1) +
+            '" x2="' + (x + ex).toFixed(1) + '" y2="' + (y + w*1.4).toFixed(1) +
+            '" stroke="#111" stroke-width="1.4"/>';
+        }
+        g += '</g>';
+        parts.push(g);
+      } else if (kind === 'junction') {
+        // junction switch: Y-shaped fork glyph, oriented along axis. a clearer
+        // "track diverges" marker than a generic interchange.
+        const R = r * 1.4;
+        const rotS = '<g transform="rotate(' + axisDeg.toFixed(1) + ',' + x.toFixed(1) + ',' + y.toFixed(1) + ')">';
+        let g = rotS;
+        // main trunk
+        g += '<line x1="' + (x - R).toFixed(1) + '" y1="' + y.toFixed(1) +
+          '" x2="' + x.toFixed(1) + '" y2="' + y.toFixed(1) +
+          '" stroke="#111" stroke-width="2.4" stroke-linecap="round"/>';
+        // fork upper
+        g += '<line x1="' + x.toFixed(1) + '" y1="' + y.toFixed(1) +
+          '" x2="' + (x + R*0.8).toFixed(1) + '" y2="' + (y - R*0.7).toFixed(1) +
+          '" stroke="#111" stroke-width="2.4" stroke-linecap="round"/>';
+        // fork lower
+        g += '<line x1="' + x.toFixed(1) + '" y1="' + y.toFixed(1) +
+          '" x2="' + (x + R*0.8).toFixed(1) + '" y2="' + (y + R*0.7).toFixed(1) +
+          '" stroke="#111" stroke-width="2.4" stroke-linecap="round"/>';
+        // switch point — small circle at fork
+        g += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) +
+          '" r="' + (r * 0.35).toFixed(1) + '" fill="#fff" stroke="#111" stroke-width="1.6"/>';
+        g += '</g>';
+        parts.push(g);
+      } else if (shape === 'ring') {
+        parts.push(inner('ring', x, y, r, 'none', count));
+      } else {
+        parts.push(inner(shape, x, y, r + 1.5, '#111', count));
+        if (kind !== 'terminal') parts.push(inner(shape, x, y, r * 0.65, '#fff', count));
+        if (kind === 'interchange') parts.push(inner(shape, x, y, r * 0.28, '#111', count));
+        if (kind === 'terminal') parts.push(inner(shape, x, y, r * 0.55, '#fff', count));
+      }
+      if (station && station.name) {
+        const lblColor = nocolor ? '#111' : '#1a1a1a';
+        const placed = placeLabel(station.name, x, y, r);
+        const safeName = station.name.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+        parts.push('<text x="' + placed.x.toFixed(1) + '" y="' + placed.y.toFixed(1) +
+          '" font-size="11" fill="' + lblColor + '"' +
+          (placed.anchor !== 'start' ? ' text-anchor="' + placed.anchor + '"' : '') +
+          '>' + safeName + '</text>');
+      }
+    }
+  }
+  // terminus tabs: pill with line code at each endpoint, positioned just
+  // past the terminus along the line's outgoing direction.
+  for (let li = 0; li < data.lines.length; li++) {
+    const ln = data.lines[li];
+    if (ln.waypoints.length < 2) continue;
+    const pts = linePath(ln);
+    for (const endIdx of [0, pts.length - 1]) {
+      const tip = pts[endIdx];
+      const neighbor = pts[endIdx === 0 ? 1 : endIdx - 1];
+      const dx = tip[0] - neighbor[0], dy = tip[1] - neighbor[1];
+      const len = Math.hypot(dx, dy);
+      if (len < 0.001) continue;
+      const ux = dx / len, uy = dy / len;
+      // tab width scales with the line name so 'VCO' and 'Sampler East' both fit.
+      // approx 6.5 px per char at the 11px weight-700 font, plus 14px end padding.
+      const label = ln.name || '';
+      const tabW = Math.max(28, label.length * 6.5 + 14);
+      const tabH = 16, gap = 6;
+      const cx = tip[0] + ux * (tabW / 2 + gap);
+      const cy = tip[1] + uy * (tabH / 2 + gap);
+      let fill;
+      if (bw) fill = '#111111';
+      else if (grey) fill = greyStyleForLine(ln, li).shade;
+      else fill = ln.color;
+      parts.push('<rect x="' + (cx - tabW / 2).toFixed(1) +
+        '" y="' + (cy - tabH / 2).toFixed(1) +
+        '" width="' + tabW.toFixed(1) + '" height="' + tabH +
+        '" rx="' + (tabH / 2) + '" fill="' + fill + '"/>');
+      parts.push('<text x="' + cx.toFixed(1) + '" y="' + (cy + 4).toFixed(1) +
+        '" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" ' +
+        'letter-spacing="1.2">' +
+        ln.name.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</text>');
+    }
+  }
+  // title block. positioned in the top-left padding area. weight and size
+  // match a print-zine header. opt-in via data.title and data.subtitle.
+  if (data.title || data.subtitle) {
+    const tx = minx + 30, ty = miny + 50;
+    const titleColor = nocolor ? '#111111' : '#1a1a1a';
+    const subColor = nocolor ? '#555555' : '#6e5d36';
+    if (data.title) {
+      parts.push('<text x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) +
+        '" font-size="28" font-weight="700" fill="' + titleColor +
+        '" letter-spacing="-0.4">' +
+        data.title.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</text>');
+    }
+    if (data.subtitle) {
+      parts.push('<text x="' + tx.toFixed(1) + '" y="' + (ty + 24).toFixed(1) +
+        '" font-size="12" fill="' + subColor + '">' +
+        data.subtitle.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</text>');
+    }
+  }
+  // legend block. one row per line with a swatch rendered in the current
+  // color mode (so grey-mode hatches and mono dash patterns survive into
+  // the legend). positioned in the chosen corner inside the padded viewport.
+  if (data.legend && data.legend.show && data.lines.length) {
+    const rowH = 18, padX = 12, padY = 10, swatchW = 36;
+    const fontSize = 11;
+    const rows = data.lines.filter(l => l.waypoints.length > 0);
+    // approximate label widths so we can size the panel. tooltips use the
+    // same heuristic as terminus tabs (~6.5 px per char).
+    const nameW = (s) => Math.min(s.length * 6.5 + 4, 160);
+    const endpointStr = (ln) => {
+      if (!data.legend.endpoints || ln.waypoints.length < 2) return '';
+      const a = data.stations.find(s =>
+        s.gx === ln.waypoints[0].gx && s.gy === ln.waypoints[0].gy && s.plane === ln.waypoints[0].plane);
+      const last = ln.waypoints[ln.waypoints.length - 1];
+      const b = data.stations.find(s => s.gx === last.gx && s.gy === last.gy && s.plane === last.plane);
+      const an = (a && a.name) || '';
+      const bn = (b && b.name) || '';
+      if (!an && !bn) return '';
+      return '  ' + (an || '?') + ' ↔ ' + (bn || '?');
+    };
+    let maxLabelW = 0;
+    for (const ln of rows) {
+      const lbl = (ln.name || '') + endpointStr(ln);
+      maxLabelW = Math.max(maxLabelW, nameW(lbl));
+    }
+    const panelW = padX * 2 + swatchW + 8 + maxLabelW;
+    const panelH = padY * 2 + rows.length * rowH;
+    const corner = data.legend.corner || 'br';
+    const inset = 18;
+    let lx, ly;
+    if (corner === 'tl') { lx = minx + inset; ly = miny + inset; }
+    else if (corner === 'tr') { lx = maxx - inset - panelW; ly = miny + inset; }
+    else if (corner === 'bl') { lx = minx + inset; ly = maxy - inset - panelH; }
+    else                      { lx = maxx - inset - panelW; ly = maxy - inset - panelH; }
+    const panelFill = nocolor ? '#ffffff' : '#fbf6e9';
+    const panelStroke = nocolor ? '#222222' : '#4a3a18';
+    const textColor = nocolor ? '#111111' : '#1a1a1a';
+    parts.push('<g class="legend">');
+    parts.push('<rect x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) +
+      '" width="' + panelW.toFixed(1) + '" height="' + panelH.toFixed(1) +
+      '" rx="3" fill="' + panelFill + '" stroke="' + panelStroke +
+      '" stroke-width="0.8" opacity="0.94"/>');
+    rows.forEach((ln, ri) => {
+      const cy = ly + padY + ri * rowH + rowH / 2;
+      const sx1 = lx + padX, sx2 = sx1 + swatchW;
+      // swatch matches the actual rendered style for this mode
+      let style, stroke;
+      if (bw) { style = bwStyleForLine(ln, ri); stroke = '#111111'; }
+      else if (grey) { style = greyStyleForLine(ln, ri); stroke = style.shade; }
+      else { style = (COLOR_STYLES[ln.style || 'solid'] || COLOR_STYLES.solid); stroke = ln.color; }
+      const sw = Math.min(style.width, 9);
+      parts.push('<line x1="' + sx1.toFixed(1) + '" y1="' + cy.toFixed(1) +
+        '" x2="' + sx2.toFixed(1) + '" y2="' + cy.toFixed(1) +
+        '" stroke="' + stroke + '" stroke-width="' + sw +
+        '" stroke-linecap="' + style.cap + '"' +
+        (style.dash ? ' stroke-dasharray="' + style.dash + '"' : '') + '/>');
+      if (grey && style.pattern && style.pattern !== 'solid') {
+        parts.push('<line x1="' + sx1.toFixed(1) + '" y1="' + cy.toFixed(1) +
+          '" x2="' + sx2.toFixed(1) + '" y2="' + cy.toFixed(1) +
+          '" stroke="url(#hatch-' + style.pattern + ')" stroke-width="' + Math.max(2, sw - 1.5) +
+          '" stroke-linecap="' + style.cap + '" opacity="0.92"/>');
+      }
+      if (style.stripe) {
+        parts.push('<line x1="' + sx1.toFixed(1) + '" y1="' + cy.toFixed(1) +
+          '" x2="' + sx2.toFixed(1) + '" y2="' + cy.toFixed(1) +
+          '" stroke="' + panelFill + '" stroke-width="' + style.stripe + '"/>');
+      }
+      const label = (ln.name || '').replace(/&/g,'&amp;').replace(/</g,'&lt;') +
+        endpointStr(ln).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+      parts.push('<text x="' + (sx2 + 8).toFixed(1) + '" y="' + (cy + 3.5).toFixed(1) +
+        '" font-size="' + fontSize + '" fill="' + textColor + '">' + label + '</text>');
+    });
+    parts.push('</g>');
+  }
+  parts.push('</svg>');
+  return parts.join('\n');
+}
+
+// sidebar button handlers
+document.getElementById('new-line').onclick = () => {
+  const id = 'l' + Date.now().toString(36);
+  const used = new Set(data.lines.map(l => l.color));
+  const color = palette.find(c => !used.has(c)) || palette[data.lines.length % palette.length];
+  data.lines.push({ id, name: 'NEW', color, style: 'solid', waypoints: [] });
+  activeLineId = id; mode = 'draw'; rebuildAll();
+};
+document.getElementById('add-plane').onclick = () => {
+  if (data.planes.length >= MAX_PLANES) { alert('max ' + MAX_PLANES + ' planes'); return; }
+  const lastZ = data.planes.length ? data.planes[data.planes.length - 1].z : 0;
+  data.planes.push({
+    name: 'Plane ' + (data.planes.length + 1),
+    z: lastZ + 3.6,
+    tint: DEFAULT_TINTS[data.planes.length % DEFAULT_TINTS.length],
+  });
+  rebuildAll();
+};
+document.getElementById('reset').onclick = () => {
+  if (!confirm('reset all data?')) return;
+  data.planes = [{ name: 'Surface', z: 0, tint: '#f0eadf' }];
+  data.lines = []; data.stations = []; data.lifts = [];
+  activePlane = 0; activeLineId = null; mode = 'draw';
+  rebuildAll();
+};
+
+// help / about modal. ESC and click-outside both close it.
+const helpModal = document.getElementById('help-modal');
+const helpBtn = document.getElementById('help-btn');
+const helpCloseBtn = document.getElementById('help-close');
+function openHelp() { helpModal.classList.add('open'); }
+function closeHelp() { helpModal.classList.remove('open'); }
+helpBtn.onclick = openHelp;
+helpCloseBtn.onclick = closeHelp;
+helpModal.addEventListener('click', (ev) => {
+  // backdrop click (target is the modal element itself, not the inner panel)
+  if (ev.target === helpModal) closeHelp();
+});
+window.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && helpModal.classList.contains('open')) { closeHelp(); return; }
+  // '?' opens the modal even without shift on some keyboards; require shift+/ on us layout.
+  if (ev.key === '?' && !(ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA'))) {
+    openHelp();
+  }
+});
+
+document.getElementById('export').onclick = () => {
+  const svg = exportSvg({ mode: bwMode });
+  if (!svg) return;
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const suffix = bwMode === 'mono' ? '_bw' : bwMode === 'grey' ? '_grey' : '';
+  a.download = 'transit_map' + suffix + '.svg';
+  a.click();
+  URL.revokeObjectURL(url);
+};
+document.getElementById('save').onclick = () => {
+  // snapshot camera state alongside the data so reopening lands at the
+  // same angle and zoom.
+  data.camera = {
+    pos: [camera.position.x, camera.position.y, camera.position.z],
+    target: [controls.target.x, controls.target.y, controls.target.z],
+    zoom: camera.zoom,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'transit_map.json'; a.click();
+  URL.revokeObjectURL(url);
+};
+document.getElementById('load-input').addEventListener('change', (ev) => {
+  const f = ev.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const loaded = JSON.parse(r.result);
+      if (loaded.planes) data.planes = loaded.planes;
+      data.lines = loaded.lines || [];
+      data.stations = loaded.stations || [];
+      data.lifts = loaded.lifts || [];
+      data.planes.forEach((p, i) => { if (!p.tint) p.tint = DEFAULT_TINTS[i % DEFAULT_TINTS.length]; });
+      if (data.lines.length) activeLineId = data.lines[0].id;
+      activePlane = 0;
+      data.title = loaded.title || '';
+      data.subtitle = loaded.subtitle || '';
+      if (titleInput) titleInput.value = data.title;
+      if (subtitleInput) subtitleInput.value = data.subtitle;
+      // restore camera if saved
+      if (loaded.camera) {
+        if (loaded.camera.pos)    camera.position.set(...loaded.camera.pos);
+        if (loaded.camera.target) controls.target.set(...loaded.camera.target);
+        if (loaded.camera.zoom != null) camera.zoom = loaded.camera.zoom;
+        camera.updateProjectionMatrix();
+        controls.update();
+      }
+      lastSnapshot = JSON.stringify(data);
+      history.undo = []; history.redo = [];
+      rebuildAll();
+    } catch(e) { alert('bad json: ' + e.message); }
+  };
+  r.readAsText(f);
+});
+
+// live preview pane
+const previewPane = document.getElementById('preview-pane');
+const previewFrame = document.getElementById('preview-frame');
+const togglePreviewBtn = document.getElementById('toggle-preview');
+const closePreviewBtn = document.getElementById('close-preview');
+const toggleBwBtn = document.getElementById('toggle-bw');
+let previewOpen = false;
+let previewTimer = null;
+let lastPreviewState = '';
+function refreshPreview() {
+  if (!previewOpen) return;
+  const svg = exportSvg({ mode: bwMode });
+  if (!svg) return;
+  const bg = bwMode === 'color' ? '#faf8f3' : '#ffffff';
+  previewFrame.srcdoc = '<html><body style="margin:0;background:' + bg +
+    ';display:flex;align-items:center;justify-content:center"><div style="max-width:100%;max-height:100vh">' + svg + '</div></body></html>';
+}
+function schedulePreview() {
+  if (previewTimer) clearTimeout(previewTimer);
+  previewTimer = setTimeout(refreshPreview, 200);
+}
+toggleBwBtn.onclick = () => {
+  // cycle: color -> mono -> grey -> color
+  bwMode = bwMode === 'color' ? 'mono' : bwMode === 'mono' ? 'grey' : 'color';
+  toggleBwBtn.textContent = bwMode === 'color' ? 'B&W' : bwMode === 'mono' ? 'grey' : 'color';
+  toggleBwBtn.classList.toggle('active', bwMode !== 'color');
+  refreshPreview();
+};
+// shared toggle so the sidebar button, the bottom-right Live button, and the
+// preview-pane close button stay in sync.
+const liveToggleBtn = document.getElementById('live-toggle');
+function setPreviewOpen(open) {
+  previewOpen = open;
+  previewPane.classList.toggle('open', open);
+  togglePreviewBtn.classList.toggle('active', open);
+  liveToggleBtn.classList.toggle('active', open);
+  if (open) refreshPreview();
+}
+togglePreviewBtn.onclick = () => setPreviewOpen(!previewOpen);
+liveToggleBtn.onclick = () => setPreviewOpen(!previewOpen);
+closePreviewBtn.onclick = () => setPreviewOpen(false);
+setInterval(() => {
+  if (!previewOpen) return;
+  const cur = JSON.stringify(data);
+  if (cur !== lastPreviewState) { schedulePreview(); lastPreviewState = cur; }
+}, 250);
+
+// resize + wheel zoom
+function applyResize() {
+  const w = container.clientWidth, h = container.clientHeight;
+  if (w < 1 || h < 1) return;
+  const a = w / h;
+  camera.left = -FRUSTUM*a/2; camera.right = FRUSTUM*a/2;
+  camera.top = FRUSTUM/2; camera.bottom = -FRUSTUM/2;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+}
+const ro = new ResizeObserver(applyResize);
+ro.observe(container);
+window.addEventListener('resize', applyResize);
+renderer.domElement.addEventListener('wheel', (ev) => {
+  ev.preventDefault();
+  const factor = ev.deltaY > 0 ? 0.9 : 1.111;
+  camera.zoom = Math.max(controls.minZoom, Math.min(controls.maxZoom, camera.zoom * factor));
+  camera.updateProjectionMatrix();
+}, { passive: false });
+
+function updateHud() {
+  let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
+    (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
+  const ln = data.lines.find(l => l.id === activeLineId);
+  if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
+  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
+  if (hoverCell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
+  hud.innerHTML = html;
+  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (popoverState.open) positionPopover();
+  rebuildSelection();
+  updateHud();
+  renderer.render(scene, camera);
+}
+
+rebuildAll();
+applyResize();
+animate();
+</script>
+</body>
+</html>
+ver();
+  rebuildSelection();
+  updateHud();
+  renderer.render(scene, camera);
+}
+
+rebuildAll();
+applyResize();
+animate();
+</script>
+</body>
+</html>
