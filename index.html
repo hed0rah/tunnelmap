@@ -1439,6 +1439,23 @@ renderer.domElement.addEventListener('contextmenu', (ev) => {
   const main = document.getElementById('main').getBoundingClientRect();
   ctxmenu.style.left = (ev.clientX - main.left) + 'px';
   ctxmenu.style.top = (ev.clientY - main.top) + 'px';
+  // capture cursor pos for the post-populate bounds check
+  const _ctxX = ev.clientX, _ctxY = ev.clientY;
+  const openCtx = () => {
+    openCtx();
+    // now that the menu has its real dimensions, flip it if it would
+    // overflow the right or bottom edge of the editor area.
+    const r = ctxmenu.getBoundingClientRect();
+    let dx = 0, dy = 0;
+    if (r.right  > main.right  - 4) dx = (main.right  - 4) - r.right;
+    if (r.bottom > main.bottom - 4) dy = (main.bottom - 4) - r.bottom;
+    if (r.left + dx < main.left + 4) dx = (main.left + 4) - r.left;
+    if (r.top  + dy < main.top  + 4) dy = (main.top  + 4) - r.top;
+    if (dx || dy) {
+      ctxmenu.style.left = (_ctxX - main.left + dx) + 'px';
+      ctxmenu.style.top  = (_ctxY - main.top  + dy) + 'px';
+    }
+  };
   // try to pick a waypoint first
   const wp = pickWaypoint();
   if (wp) {
@@ -1497,7 +1514,7 @@ renderer.domElement.addEventListener('contextmenu', (ev) => {
       ctxmenu.appendChild(ctxItem('delete waypoint', () => {
         ln.waypoints.splice(wp.wpIndex, 1); rebuildAll();
       }, 'danger'));
-      ctxmenu.classList.add('open');
+      openCtx();
       return;
     }
   }
@@ -1554,7 +1571,7 @@ renderer.domElement.addEventListener('contextmenu', (ev) => {
         if (activeLineId === ln.id && data.lines.length) activeLineId = data.lines[0].id;
         rebuildAll();
       }, 'danger'));
-      ctxmenu.classList.add('open');
+      openCtx();
       return;
     }
   }
@@ -1574,7 +1591,7 @@ renderer.domElement.addEventListener('contextmenu', (ev) => {
       ctxmenu.appendChild(ctxItem('delete lift', () => {
         data.lifts.splice(bestIdx, 1); rebuildAll();
       }, 'danger'));
-      ctxmenu.classList.add('open');
+      openCtx();
       return;
     }
   }
@@ -1615,7 +1632,7 @@ renderer.domElement.addEventListener('contextmenu', (ev) => {
       activeLineId = id; mode = 'draw'; rebuildAll();
     }));
     ctxmenu.appendChild(ctxItem('switch to this plane', () => { activePlane = cell.plane; rebuildAll(); }));
-    ctxmenu.classList.add('open');
+    openCtx();
     return;
   }
 });
@@ -3182,9 +3199,17 @@ function refreshPreview() {
   if (!previewOpen) return;
   const svg = exportSvg({ mode: bwMode });
   if (!svg) return;
-  const bg = bwMode === 'color' ? '#faf8f3' : '#ffffff';
-  previewFrame.srcdoc = '<html><body style="margin:0;background:' + bg +
-    ';display:flex;align-items:center;justify-content:center"><div style="max-width:100%;max-height:100vh">' + svg + '</div></body></html>';
+  const themeBg = (THEMES[data.theme] && THEMES[data.theme].paper) || '#faf8f3';
+  const bg = bwMode === 'color' ? themeBg : '#ffffff';
+  // strip the print-size width="1400" so the svg scales to the iframe width
+  // via its viewBox. that attribute stays on the actual export download.
+  const scaled = svg.replace(/(<svg[^>]*?)\s+width="1400"/, '$1');
+  previewFrame.srcdoc =
+    '<html><head><style>' +
+      'html,body{margin:0;height:100%;background:' + bg + ';}' +
+      'body{display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;}' +
+      'svg{display:block;width:100%;height:auto;max-width:100%;max-height:100%;}' +
+    '</style></head><body>' + scaled + '</body></html>';
 }
 function schedulePreview() {
   if (previewTimer) clearTimeout(previewTimer);
@@ -3263,6 +3288,39 @@ animate();
 </body>
 </html>
 ver();
+  rebuildSelection();
+  updateHud();
+  renderer.render(scene, camera);
+}
+
+rebuildAll();
+applyResize();
+animate();
+</script>
+</body>
+</html>
+r.domElement.addEventListener('wheel', (ev) => {
+  ev.preventDefault();
+  const factor = ev.deltaY > 0 ? 0.9 : 1.111;
+  camera.zoom = Math.max(controls.minZoom, Math.min(controls.maxZoom, camera.zoom * factor));
+  camera.updateProjectionMatrix();
+}, { passive: false });
+
+function updateHud() {
+  let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
+    (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
+  const ln = data.lines.find(l => l.id === activeLineId);
+  if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
+  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
+  if (hoverCell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
+  hud.innerHTML = html;
+  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (popoverState.open) positionPopover();
   rebuildSelection();
   updateHud();
   renderer.render(scene, camera);
