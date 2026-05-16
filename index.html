@@ -1133,16 +1133,36 @@ function rebuildHover() {
 
 function rebuildSelection() {
   clearGroup(selectionGroup);
+  // pulse the ring slightly so the user's eye locks onto it. simple time-
+  // based scale; the animate loop calls rebuildSelection every frame so
+  // this naturally animates.
+  const t = (performance.now() % 1200) / 1200;
+  const pulse = 1 + 0.08 * Math.sin(t * Math.PI * 2);
   for (const sel of selectedWaypoints) {
     const ln = data.lines.find(l => l.id === sel.lineId);
     if (!ln) continue;
     const wp = ln.waypoints[sel.wpIndex];
     if (!wp) continue;
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.045, 8, 24),
+    const pos = wpToWorld(wp);
+    // outer halo — broad, low-opacity disc so the location is visible from
+    // any camera angle even when the inner ring is edge-on.
+    const halo = new THREE.Mesh(new THREE.RingGeometry(0.40 * pulse, 0.56 * pulse, 32),
+      new THREE.MeshBasicMaterial({ color: 0xff7a00, transparent: true, opacity: 0.35, side: THREE.DoubleSide }));
+    halo.position.copy(pos); halo.position.y += 0.32;
+    halo.rotation.x = -Math.PI / 2;
+    selectionGroup.add(halo);
+    // primary torus ring — solid, contrasting orange
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.36 * pulse, 0.06, 10, 28),
       new THREE.MeshBasicMaterial({ color: 0xff7a00 }));
-    ring.position.copy(wpToWorld(wp));
+    ring.position.copy(pos); ring.position.y += 0.32;
     ring.rotation.x = Math.PI / 2;
     selectionGroup.add(ring);
+    // inner accent dot — small bright marker at center to clearly tag THIS
+    // is the selected node when many waypoints are crowded together
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 10),
+      new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    dot.position.copy(pos); dot.position.y += 0.38;
+    selectionGroup.add(dot);
   }
 }
 
@@ -1209,6 +1229,15 @@ function pickPlaneCell() {
   if (!hits.length) return null;
   const p = hits[0].point;
   return { gx: Math.round(p.x), gy: Math.round(p.z), plane: activePlane };
+}
+// pick the closest plane mesh the cursor ray hits — used during shift+drag
+// to let the user move a waypoint between planes by dragging upward/downward.
+function pickAnyPlaneCell() {
+  const hits = raycaster.intersectObjects(planeMeshes);
+  if (!hits.length) return null;
+  const h = hits[0];
+  const planeIdx = planeMeshes.indexOf(h.object);
+  return { gx: Math.round(h.point.x), gy: Math.round(h.point.z), plane: planeIdx >= 0 ? planeIdx : activePlane };
 }
 function octolinearSnap(from, to) {
   const dx = to.gx - from.gx, dy = to.gy - from.gy;
@@ -1282,7 +1311,9 @@ function transformSelection(op, ccw) {
 renderer.domElement.addEventListener('mousemove', (ev) => {
   setMouse(ev); raycaster.setFromCamera(mouse, camera);
   if (dragging) {
-    const cell = pickPlaneCell();
+    // shift held → pick across all planes so user can lift/lower the wp
+    // between planes by dragging vertically. otherwise stays on active plane.
+    const cell = ev.shiftKey ? pickAnyPlaneCell() : pickPlaneCell();
     if (cell) {
       const ln = data.lines.find(l => l.id === dragging.lineId);
       if (ln) { ln.waypoints[dragging.wpIndex] = cell; rebuildLines(); rebuildStations(); rebuildHover(); }
@@ -2249,7 +2280,7 @@ window.addEventListener('mousemove', (ev) => {
     }
     if (dragPress.dragged) {
       setMouse(ev); raycaster.setFromCamera(mouse, camera);
-      const cell = pickPlaneCell();
+      const cell = ev.shiftKey ? pickAnyPlaneCell() : pickPlaneCell();
       if (cell) {
         const ln = data.lines.find(l => l.id === dragPress.wp.lineId);
         if (ln) {
@@ -2269,7 +2300,7 @@ window.addEventListener('mousemove', (ev) => {
     }
     if (selectPress.dragged) {
       setMouse(ev); raycaster.setFromCamera(mouse, camera);
-      const cell = pickPlaneCell();
+      const cell = ev.shiftKey ? pickAnyPlaneCell() : pickPlaneCell();
       if (cell) {
         const ln = data.lines.find(l => l.id === selectPress.wp.lineId);
         if (ln) {
@@ -2352,6 +2383,32 @@ window.addEventListener('mouseup', (ev) => {
       selectedWaypoints = hit;
     }
     rebuildSelection();
+  } else if (selectedWaypoints.length === 1) {
+    // tiny marquee = click without drag, and exactly one waypoint selected.
+    // start a new line from the selected node to the clicked cell. lets
+    // the user select a node, then click empty space to branch.
+    setMouse(ev); raycaster.setFromCamera(mouse, camera);
+    const cell = pickPlaneCell();
+    if (cell) {
+      const sel = selectedWaypoints[0];
+      const sln = data.lines.find(l => l.id === sel.lineId);
+      const swp = sln && sln.waypoints[sel.wpIndex];
+      if (sln && swp) {
+        const id = 'l' + Date.now().toString(36);
+        const used = new Set(data.lines.map(l => l.color));
+        const color = palette.find(c => !used.has(c)) || palette[data.lines.length % palette.length];
+        const target = swp.plane === cell.plane ? octolinearSnap(swp, cell) : cell;
+        data.lines.push({ id, name: 'NEW', color, style: 'solid',
+          waypoints: [{ gx: swp.gx, gy: swp.gy, plane: swp.plane }, target] });
+        activeLineId = id;
+        activePlane = target.plane;
+        mode = 'draw';
+        // keep selection on the tail of the new line so consecutive clicks
+        // chain another branch — feels like a stretch-extend gesture.
+        selectedWaypoints = [{ lineId: id, wpIndex: 1 }];
+        rebuildAll(); rebuildSelection();
+      }
+    }
   }
   marqueeEl.classList.remove('active');
   marqueeStart = null;
@@ -3495,6 +3552,100 @@ animate();
 </body>
 </html>
  activeLineId);
+  if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
+  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
+  if (hoverCell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
+  hud.innerHTML = html;
+  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (popoverState.open) positionPopover();
+  rebuildSelection();
+  updateHud();
+  renderer.render(scene, camera);
+}
+
+rebuildAll();
+applyResize();
+animate();
+</script>
+</body>
+</html>
+gify(data);
+  if (cur !== lastPreviewState) { schedulePreview(); lastPreviewState = cur; }
+}, 250);
+
+function applyResize() {
+  const w = container.clientWidth, h = container.clientHeight;
+  if (w < 1 || h < 1) return;
+  const a = w / h;
+  camera.left = -FRUSTUM*a/2; camera.right = FRUSTUM*a/2;
+  camera.top = FRUSTUM/2; camera.bottom = -FRUSTUM/2;
+  camera.updateProjectionMatrix();
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(w, h);
+}
+const ro = new ResizeObserver(applyResize);
+ro.observe(container);
+window.addEventListener('resize', applyResize);
+function watchDpr() {
+  const mq = window.matchMedia('(resolution: ' + window.devicePixelRatio + 'dppx)');
+  const onChange = () => { applyResize(); watchDpr(); };
+  mq.addEventListener('change', onChange, { once: true });
+}
+watchDpr();
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) applyResize();
+});
+window.addEventListener('focus', applyResize);
+let _lastSizeKey = '';
+setInterval(() => {
+  const key = container.clientWidth + 'x' + container.clientHeight + '@' + window.devicePixelRatio;
+  if (key !== _lastSizeKey) { _lastSizeKey = key; applyResize(); }
+}, 800);
+renderer.domElement.addEventListener('wheel', (ev) => {
+  ev.preventDefault();
+  const factor = ev.deltaY > 0 ? 0.9 : 1.111;
+  camera.zoom = Math.max(controls.minZoom, Math.min(controls.maxZoom, camera.zoom * factor));
+  camera.updateProjectionMatrix();
+}, { passive: false });
+
+function updateHud() {
+  let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
+    (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
+  const ln = data.lines.find(l => l.id === activeLineId);
+  if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
+  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
+  if (hoverCell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
+  hud.innerHTML = html;
+  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (popoverState.open) positionPopover();
+  rebuildSelection();
+  updateHud();
+  renderer.render(scene, camera);
+}
+
+rebuildAll();
+applyResize();
+animate();
+</script>
+</body>
+</html>
+.updateProjectionMatrix();
+}, { passive: false });
+
+function updateHud() {
+  let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
+    (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
+  const ln = data.lines.find(l => l.id === activeLineId);
   if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
   if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
   if (hoverCell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
