@@ -24,19 +24,20 @@
   --kb-bg: #1a1a1a;
 }
 :root[data-theme="dark"] {
-  --paper: #1b1d22;
-  --ui-bg: #23262e;
-  --ui-bg-soft: #2c2f38;
-  --ui-border: #3a3e48;
-  --ui-divider: #353944;
-  --ink: #e8e4d8;
-  --ink-soft: #b8a878;
-  --ink-mute: #6e7280;
-  --field-bg: #2c2f38;
-  --field-bg-active: #e8e4d8;
-  --field-border-active: #b8a878;
-  --danger: #ef5350;
-  --kb-bg: #b8a878;
+  /* toned up from #1b1d22 — still dark but readable */
+  --paper: #2a2d35;
+  --ui-bg: #353944;
+  --ui-bg-soft: #404556;
+  --ui-border: #4a4e58;
+  --ui-divider: #404556;
+  --ink: #f0ecde;
+  --ink-soft: #c8b888;
+  --ink-mute: #8a8470;
+  --field-bg: #3a3e48;
+  --field-bg-active: #f0ecde;
+  --field-border-active: #c8b888;
+  --danger: #ef6052;
+  --kb-bg: #c8b888;
 }
 :root[data-theme="cool"] {
   --paper: #f4f5f7;
@@ -101,16 +102,16 @@
   --kb-bg: #3a2410;
 }
 :root[data-theme="outrun"] {
-  /* outrun: 80s neon synth aesthetic — magenta + cyan on near-black */
-  --paper: #0c0d18;
-  --ui-bg: #15172a;
-  --ui-bg-soft: #1d2040;
+  /* outrun: 80s neon synth — magenta + cyan, slightly lifted paper for readability */
+  --paper: #181a2c;
+  --ui-bg: #21243e;
+  --ui-bg-soft: #2c3052;
   --ui-border: #ff2a90;
-  --ui-divider: #3a2050;
-  --ink: #d8e8ff;
+  --ui-divider: #4a2860;
+  --ink: #e8eeff;
   --ink-soft: #ff2a90;
-  --ink-mute: #6a78a0;
-  --field-bg: #1d2040;
+  --ink-mute: #7884b4;
+  --field-bg: #2c3052;
   --field-bg-active: #ff2a90;
   --field-border-active: #00e8ff;
   --danger: #ff4060;
@@ -133,20 +134,20 @@
   --kb-bg: #2cd4c8;
 }
 :root[data-theme="grivt"] {
-  /* Grivt: weathered industrial, oxidized brass on dirty cream paper */
-  --paper: #c4b89e;
-  --ui-bg: #5d5347;
-  --ui-bg-soft: #756a5c;
-  --ui-border: #8b7a5a;
-  --ui-divider: #6e6354;
-  --ink: #f0e8d4;
-  --ink-soft: #d4b870;
-  --ink-mute: #a89b80;
-  --field-bg: #2e2418;
-  --field-bg-active: #d4b870;
-  --field-border-active: #f0e8d4;
+  /* Grivt: concrete brutalist — weathered grey, rust accent, dark ink */
+  --paper: #b8b3a8;
+  --ui-bg: #3a3a36;
+  --ui-bg-soft: #4a4a45;
+  --ui-border: #a8542e;
+  --ui-divider: #5a5a55;
+  --ink: #f4f2ec;
+  --ink-soft: #a8542e;
+  --ink-mute: #8a8a82;
+  --field-bg: #2a2a28;
+  --field-bg-active: #a8542e;
+  --field-border-active: #f4f2ec;
   --danger: #c84830;
-  --kb-bg: #d4b870;
+  --kb-bg: #a8542e;
 }
 :root[data-theme="blueprint"] {
   /* lightened so labels and lines read crisply at zine print sizes */
@@ -664,9 +665,12 @@ function wpToWorld(wp, off) {
   return new THREE.Vector3(wp.gx + off.x, z + 0.04, wp.gy + off.y);
 }
 function updateCameraTarget() {
+  // only update Y (the plane-height axis). preserve the user's pan in X/Z —
+  // otherwise every rebuildAll snaps the camera back to origin, which felt
+  // like the view "jumping to the left" after any line-state change.
   const heights = data.planes.map(p => p.z);
   const c = heights.length ? (Math.min(...heights) + Math.max(...heights)) / 2 : 0;
-  controls.target.set(0, c, 0);
+  controls.target.setY(c);
 }
 
 function buildCorridors() {
@@ -886,6 +890,10 @@ function rebuildLines() {
     // lines are per-plane; hide if their plane is hidden
     if (planeHidden(ln.waypoints[0].plane)) return;
     const mat = new THREE.MeshBasicMaterial({ color: ln.color });
+    // a slightly translucent variant for the decorative joint spheres so any
+    // station shape (triangle/diamond/etc.) placed at a waypoint reads through
+    // them. doesn't affect cylinder bodies, just the rounded joints.
+    const sphereMat = new THREE.MeshBasicMaterial({ color: ln.color, transparent: true, opacity: 0.85 });
     const group = new THREE.Group();
     const yLift = 0.04 + lineIdx * Y_STAGGER;
     const basePositions = ln.waypoints.map((wp, i) => {
@@ -912,7 +920,7 @@ function rebuildLines() {
       group.add(cyl);
     }
     for (let i = 0; i < path.length; i++) {
-      const s = new THREE.Mesh(new THREE.SphereGeometry(LINE_RADIUS, 10, 10), mat);
+      const s = new THREE.Mesh(new THREE.SphereGeometry(LINE_RADIUS, 10, 10), sphereMat);
       s.position.copy(path[i]);
       s.userData = { lineId: ln.id };
       group.add(s);
@@ -988,21 +996,25 @@ function rebuildStations() {
       const r = kind === 'interchange' ? INTERCHANGE_R :
                 kind === 'terminal' ? STATION_R * 1.4 :
                 kind === 'bend' ? STATION_R * 0.5 : STATION_R;
+      // lift the station above the line y-stagger so it always renders on top,
+      // no matter how many lines pass through. with up to 20 lines staggering
+      // ~0.006 each plus a 0.04 base, a 0.25 lift clears everything cleanly.
+      const STATION_Y = 0.25;
       if (shape === 'ring') {
         const ring = makeStationShape('ring', r, 0.05, 0x111111);
-        ring.position.copy(wpToWorld(wp)); ring.position.y += 0.06;
+        ring.position.copy(wpToWorld(wp)); ring.position.y += STATION_Y;
         ring.rotation.x = Math.PI / 2;
         stationsGroup.add(ring);
         continue;
       }
       if (kind === 'bend') {
         const dot = makeStationShape(shape, r, 0.05, 0x111111);
-        dot.position.copy(wpToWorld(wp)); dot.position.y += 0.06;
+        dot.position.copy(wpToWorld(wp)); dot.position.y += STATION_Y;
         stationsGroup.add(dot);
         continue;
       }
       const outer = makeStationShape(shape, r, 0.05, 0x111111);
-      outer.position.copy(wpToWorld(wp)); outer.position.y += 0.06;
+      outer.position.copy(wpToWorld(wp)); outer.position.y += STATION_Y;
       stationsGroup.add(outer);
       const inner = makeStationShape(shape, r * 0.62, 0.06, 0xffffff);
       inner.position.copy(outer.position); inner.position.y += 0.006;
@@ -1649,59 +1661,63 @@ data.subtitle = data.subtitle || '';
 data.theme = data.theme || 'cool';
 // theme palettes: paper + plane tints used by the svg export. css variables
 // (above) handle the editor chrome; this table feeds the export.
+// plane tints are ordered BOTTOM (lowest z, plane 0) → TOP. they go darker →
+// lighter so the lower planes read as "deeper" and don't visually obscure the
+// upper ones when stacked in iso view.
 const THEMES = {
   beige: {
     paper: '#faf8f3',
-    planeTints: ['#f0eadf', '#ece5d6', '#e8e0cd', '#e2d8b8', '#dccda0', '#d6c294'],
+    planeTints: ['#d6c294', '#dccda0', '#e2d8b8', '#e8e0cd', '#ece5d6', '#f0eadf'],
     inkDark: '#1a1a1a', inkSoft: '#6e5d36', planeStroke: '#cdbf9c',
   },
   dark: {
-    paper: '#1b1d22',
-    planeTints: ['#2a2d35', '#33363f', '#3c4049', '#454953', '#4e525d', '#575b67'],
-    inkDark: '#e8e4d8', inkSoft: '#b8a878', planeStroke: '#4a4e58',
+    /* paper lightened from #1b1d22 to #2a2d35 so lines + labels read */
+    paper: '#2a2d35',
+    planeTints: ['#3c4049', '#454953', '#4e525d', '#575b67', '#606471', '#697080'],
+    inkDark: '#f0ecde', inkSoft: '#c8b888', planeStroke: '#5a5e68',
   },
   cool: {
     paper: '#f4f5f7',
-    planeTints: ['#e6e8ec', '#dde0e7', '#d4d8e2', '#cbd0dd', '#c2c8d8', '#b9c0d3'],
+    planeTints: ['#b9c0d3', '#c2c8d8', '#cbd0dd', '#d4d8e2', '#dde0e7', '#e6e8ec'],
     inkDark: '#1a2030', inkSoft: '#4a566e', planeStroke: '#a6acbc',
   },
   paper: {
-    /* warm cream — clean ivory zine paper feel without beige's yellow warmth */
     paper: '#f8f4ec',
-    planeTints: ['#ede6d8', '#e2d8c4', '#d7cab0', '#ccbc9c', '#c1ae88', '#b6a074'],
+    planeTints: ['#b6a074', '#c1ae88', '#ccbc9c', '#d7cab0', '#e2d8c4', '#ede6d8'],
     inkDark: '#2a2520', inkSoft: '#7a6a4a', planeStroke: '#bba980',
   },
   bone: {
-    /* cool ivory, slightly desaturated for a museum-label feel */
     paper: '#eeece4',
-    planeTints: ['#e2dfd2', '#d6d2c0', '#cac5ae', '#beb89c', '#b2ab8a', '#a69e78'],
+    planeTints: ['#a69e78', '#b2ab8a', '#beb89c', '#cac5ae', '#d6d2c0', '#e2dfd2'],
     inkDark: '#1f1e1a', inkSoft: '#5a5444', planeStroke: '#9c9682',
   },
   sepia: {
     paper: '#f0e3c4',
-    planeTints: ['#e8d8b0', '#dec898', '#d4b880', '#cba868', '#c19850', '#b78838'],
+    planeTints: ['#b78838', '#c19850', '#cba868', '#d4b880', '#dec898', '#e8d8b0'],
     inkDark: '#3a2410', inkSoft: '#6b4824', planeStroke: '#a8784c',
   },
   outrun: {
-    paper: '#0c0d18',
-    planeTints: ['#15172a', '#1b1d34', '#21243e', '#272a48', '#2d3052', '#33365c'],
-    inkDark: '#d8e8ff', inkSoft: '#ff2a90', planeStroke: '#ff2a90',
+    /* lightened from #0c0d18 to #181a2c so neon hot pink + cyan accents
+       read against it without the paper feeling like a black hole */
+    paper: '#181a2c',
+    planeTints: ['#262a48', '#2c3052', '#33365c', '#393d66', '#404470', '#464a7a'],
+    inkDark: '#e8eeff', inkSoft: '#ff2a90', planeStroke: '#ff2a90',
   },
   killengn: {
-    paper: '#0a1416',
-    planeTints: ['#122225', '#172a2e', '#1c3237', '#213a40', '#264249', '#2b4a52'],
-    inkDark: '#c8e8e8', inkSoft: '#2cd4c8', planeStroke: '#2cd4c8',
+    paper: '#0e1c1f',
+    planeTints: ['#213a40', '#264249', '#2b4a52', '#30525b', '#355a64', '#3a626d'],
+    inkDark: '#d8ecec', inkSoft: '#2cd4c8', planeStroke: '#2cd4c8',
   },
   grivt: {
-    paper: '#c4b89e',
-    planeTints: ['#b8ab90', '#a89b80', '#988b70', '#887b60', '#786b50', '#685b40'],
-    inkDark: '#1a1612', inkSoft: '#6b4d24', planeStroke: '#8b7a5a',
+    /* concrete brutalist — weathered grey paper, rust accent, dark ink.
+       no warm browns; this is rebar, oil stains, and dust. */
+    paper: '#b8b3a8',
+    planeTints: ['#6e6c66', '#7c7a72', '#8a8880', '#98968d', '#a4a298', '#b0aea3'],
+    inkDark: '#0e0e0c', inkSoft: '#a8542e', planeStroke: '#5a5a55',
   },
   blueprint: {
-    /* shifted lighter so lines and labels read more clearly without
-       losing the cyan-on-blue drafting-paper vibe */
     paper: '#2d5c8c',
-    planeTints: ['#3568a0', '#3a6eaa', '#3f74b4', '#447abe', '#4980c8', '#4e86d2'],
+    planeTints: ['#4e86d2', '#4980c8', '#447abe', '#3f74b4', '#3a6eaa', '#3568a0'],
     inkDark: '#f0f8ff', inkSoft: '#a8d0f0', planeStroke: '#9cc8ec',
   },
 };
@@ -1839,6 +1855,27 @@ window.addEventListener('keydown', (ev) => {
     }
     selectedWaypoints = [];
     rebuildAll(); rebuildSelection();
+  }
+  // arrow keys nudge the selected waypoint(s). shift = 5-unit jump. axes
+  // are in grid space; left/right move gx, up/down move gy. gy is "north"
+  // in the projection so up arrow decreases gy (toward upper-right in iso).
+  if (selectedWaypoints.length && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight' ||
+      ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) {
+    ev.preventDefault();
+    const step = ev.shiftKey ? 5 : 1;
+    let dx = 0, dy = 0;
+    if (ev.key === 'ArrowLeft')  dx = -step;
+    if (ev.key === 'ArrowRight') dx =  step;
+    if (ev.key === 'ArrowUp')    dy = -step;
+    if (ev.key === 'ArrowDown')  dy =  step;
+    for (const sel of selectedWaypoints) {
+      const ln = data.lines.find(l => l.id === sel.lineId);
+      if (!ln) continue;
+      const w = ln.waypoints[sel.wpIndex];
+      if (!w) continue;
+      ln.waypoints[sel.wpIndex] = { ...w, gx: w.gx + dx, gy: w.gy + dy };
+    }
+    rebuildAll(); rebuildSelection(); refreshPreview();
   }
   // mirror / rotate. r/shift+r = rotate +/-90deg about centroid (preserves
   // octolinear; visually ~60deg in iso projection). h = mirror x, v = mirror y.
@@ -3281,77 +3318,6 @@ renderer.domElement.addEventListener('wheel', (ev) => {
 }, { passive: false });
 
 function updateHud() {
-  let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
-    (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
-  const ln = data.lines.find(l => l.id === activeLineId);
-  if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
-  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
-  if (hoverCell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
-  hud.innerHTML = html;
-  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
-}
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  if (popoverState.open) positionPopover();
-  rebuildSelection();
-  updateHud();
-  renderer.render(scene, camera);
-}
-
-rebuildAll();
-applyResize();
-animate();
-</script>
-</body>
-</html>
-ver();
-  rebuildSelection();
-  updateHud();
-  renderer.render(scene, camera);
-}
-
-rebuildAll();
-applyResize();
-animate();
-</script>
-</body>
-</html>
-r.domElement.addEventListener('wheel', (ev) => {
-  ev.preventDefault();
-  const factor = ev.deltaY > 0 ? 0.9 : 1.111;
-  camera.zoom = Math.max(controls.minZoom, Math.min(controls.maxZoom, camera.zoom * factor));
-  camera.updateProjectionMatrix();
-}, { passive: false });
-
-function updateHud() {
-  let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
-    (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
-  const ln = data.lines.find(l => l.id === activeLineId);
-  if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
-  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
-  if (hoverCell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
-  hud.innerHTML = html;
-  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
-}
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  if (popoverState.open) positionPopover();
-  rebuildSelection();
-  updateHud();
-  renderer.render(scene, camera);
-}
-
-rebuildAll();
-applyResize();
-animate();
-</script>
-</body>
-</html>
-unction updateHud() {
   let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
     (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
   const ln = data.lines.find(l => l.id === activeLineId);
