@@ -177,6 +177,7 @@ html, body { height: 100%; font-family: Inter, Helvetica, Arial, sans-serif;
   text-transform: uppercase; color: var(--ink-soft); margin-bottom: 4px; }
 #main { flex: 1; position: relative; min-width: 0; }
 #canvas-container { position: absolute; inset: 0; }
+#canvas-container canvas { display: block; width: 100% !important; height: 100% !important; }
 #hud, #zoom-readout { position: absolute; background: rgba(255,255,255,0.85);
   padding: 6px 10px; border-radius: 4px; border: 1px solid var(--ui-border);
   pointer-events: none; font-size: 11px; line-height: 1.5; color: var(--ink); }
@@ -3351,7 +3352,10 @@ function applyResize() {
   // different DPRs doesn't fire a window resize, but it can fire the
   // ResizeObserver if the css pixel dimensions shift even slightly.
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(w, h, false);
+  // updateStyle=true (default) so the canvas's CSS width/height refresh too.
+  // earlier this passed false which left the canvas stuck at the previous
+  // monitor's dimensions after a cross-monitor drag.
+  renderer.setSize(w, h);
 }
 const ro = new ResizeObserver(applyResize);
 ro.observe(container);
@@ -3371,6 +3375,13 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) applyResize();
 });
 window.addEventListener('focus', applyResize);
+// final fallback: poll every 800ms for size or DPR drift. catches the case
+// where the OS doesn't deliver any event during a cross-monitor drag.
+let _lastSizeKey = '';
+setInterval(() => {
+  const key = container.clientWidth + 'x' + container.clientHeight + '@' + window.devicePixelRatio;
+  if (key !== _lastSizeKey) { _lastSizeKey = key; applyResize(); }
+}, 800);
 renderer.domElement.addEventListener('wheel', (ev) => {
   ev.preventDefault();
   const factor = ev.deltaY > 0 ? 0.9 : 1.111;
@@ -3461,6 +3472,29 @@ animate();
 b> &middot; plane <b>' +
     (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
   const ln = data.lines.find(l => l.id === activeLineId);
+  if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
+  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
+  if (hoverCell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
+  hud.innerHTML = html;
+  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (popoverState.open) positionPopover();
+  rebuildSelection();
+  updateHud();
+  renderer.render(scene, camera);
+}
+
+rebuildAll();
+applyResize();
+animate();
+</script>
+</body>
+</html>
+ activeLineId);
   if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
   if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
   if (hoverCell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
