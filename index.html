@@ -180,15 +180,16 @@ html, body { height: 100%; font-family: Inter, Helvetica, Arial, sans-serif;
   padding: 6px 10px; border-radius: 4px; border: 1px solid var(--ui-border);
   pointer-events: none; font-size: 11px; line-height: 1.5; color: var(--ink); }
 #hud { top: 14px; right: 14px; }
-#zoom-readout { bottom: 14px; right: 14px; font-family: monospace; font-size: 10px; }
-#live-toggle { position: absolute; bottom: 14px; right: 82px;
+#live-toggle { position: absolute; bottom: 14px; right: 96px;
   background: rgba(255,255,255,0.85); border: 1px solid var(--ui-border);
-  color: var(--ink); padding: 4px 11px; border-radius: 4px;
+  color: var(--ink); padding: 5px 14px; border-radius: 4px;
   font: inherit; font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
-  cursor: pointer; }
+  cursor: pointer; line-height: 1; height: 22px; }
 #live-toggle:hover { background: var(--ui-bg-soft); }
 #live-toggle.active { background: var(--ink); color: var(--paper);
   border-color: var(--ink); }
+#zoom-readout { bottom: 14px; right: 14px; font-family: monospace; font-size: 10px;
+  height: 22px; display: flex; align-items: center; line-height: 1; }
 .btn { background: var(--field-bg); border: 1px solid var(--ui-border); padding: 5px 9px; cursor: pointer;
   font-family: inherit; font-size: 12px; border-radius: 4px; text-align: left;
   color: var(--ink); }
@@ -353,6 +354,7 @@ input[type=file] { display: none; }
 </div>
 <div><h2>file</h2>
 <button class="btn" id="toggle-preview" style="width:100%">live preview</button>
+<button class="btn" id="reset-view" style="width:100%;margin-top:4px">reset view</button>
 <button class="btn" id="export" style="width:100%;margin-top:4px">export svg</button>
 <button class="btn" id="save" style="width:100%;margin-top:4px">save json</button>
 <label class="btn" for="load-input" style="width:100%;margin-top:4px;display:block;text-align:center">load json</label>
@@ -1442,7 +1444,7 @@ renderer.domElement.addEventListener('contextmenu', (ev) => {
   // capture cursor pos for the post-populate bounds check
   const _ctxX = ev.clientX, _ctxY = ev.clientY;
   const openCtx = () => {
-    openCtx();
+    ctxmenu.classList.add('open');
     // now that the menu has its real dimensions, flip it if it would
     // overflow the right or bottom edge of the editor area.
     const r = ctxmenu.getBoundingClientRect();
@@ -3099,13 +3101,30 @@ document.getElementById('add-plane').onclick = () => {
   });
   rebuildAll();
 };
+// snap the 3d editor camera back to its default iso angle and zoom.
+// useful after a "reset all" or any time the user gets lost panning around.
+function resetView() {
+  camera.position.set(20, 16, 20);
+  camera.zoom = 1;
+  controls.target.set(0, 3.6, 0);
+  camera.updateProjectionMatrix();
+  controls.update();
+}
 document.getElementById('reset').onclick = () => {
   if (!confirm('reset all data?')) return;
-  data.planes = [{ name: 'Surface', z: 0, tint: '#f0eadf' }];
+  data.planes = [{ name: 'Surface', z: 0, tint: data.theme && THEMES[data.theme] ? THEMES[data.theme].planeTints[0] : '#f0eadf' }];
   data.lines = []; data.stations = []; data.lifts = [];
+  data.title = ''; data.subtitle = '';
+  if (titleInput) titleInput.value = '';
+  if (subtitleInput) subtitleInput.value = '';
   activePlane = 0; activeLineId = null; mode = 'draw';
+  selectedWaypoints = [];
+  closePopover();
+  resetView();
   rebuildAll();
+  refreshPreview();
 };
+document.getElementById('reset-view').onclick = () => { resetView(); };
 
 // help / about modal. ESC and click-outside both close it.
 const helpModal = document.getElementById('help-modal');
@@ -3307,6 +3326,32 @@ r.domElement.addEventListener('wheel', (ev) => {
 }, { passive: false });
 
 function updateHud() {
+  let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
+    (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
+  const ln = data.lines.find(l => l.id === activeLineId);
+  if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
+  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
+  if (hoverCell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
+  hud.innerHTML = html;
+  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (popoverState.open) positionPopover();
+  rebuildSelection();
+  updateHud();
+  renderer.render(scene, camera);
+}
+
+rebuildAll();
+applyResize();
+animate();
+</script>
+</body>
+</html>
+unction updateHud() {
   let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
     (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
   const ln = data.lines.find(l => l.id === activeLineId);
