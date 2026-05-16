@@ -904,16 +904,31 @@ function rebuildLines() {
     const sphereMat = new THREE.MeshBasicMaterial({ color: ln.color, transparent: true, opacity: 0.85 });
     const group = new THREE.Group();
     const yLift = 0.04 + lineIdx * Y_STAGGER;
-    const basePositions = ln.waypoints.map((wp, i) => {
+    const rawBase = ln.waypoints.map((wp, i) => {
       const o = waypointOffset(ln, i, corridors);
       const z = data.planes[wp.plane] ? data.planes[wp.plane].z : 0;
       return new THREE.Vector3(wp.gx + o.x, z + yLift, wp.gy + o.y);
     });
+    // dedupe consecutive coincident points (xz only — y stagger is shared
+    // along a line). prevents catmull-rom / fillet NaN cascade when the user
+    // accidentally clicks the same spot twice.
+    const basePositions = [];
+    const baseWpIdx = [];
+    for (let i = 0; i < rawBase.length; i++) {
+      const p = rawBase[i];
+      const last = basePositions.length ? basePositions[basePositions.length - 1] : null;
+      if (!last || Math.abs(last.x - p.x) > 1e-6 || Math.abs(last.z - p.z) > 1e-6) {
+        basePositions.push(p); baseWpIdx.push(i);
+      }
+    }
+    const fullRadii = radiiForLine(ln);
+    const dedupedRadii = baseWpIdx.map(i => fullRadii[i]);
     const curveMode = ln.curveMode || (ln.smooth === false ? 'sharp' : 'fillet');
     let path;
-    if (curveMode === 'spline') path = catmullRom3D(basePositions, 10);
+    if (basePositions.length < 2) path = basePositions;
+    else if (curveMode === 'spline') path = catmullRom3D(basePositions, 10);
     else if (curveMode === 'sharp') path = basePositions;
-    else path = smoothCorners(basePositions, radiiForLine(ln), 6);
+    else path = smoothCorners(basePositions, dedupedRadii, 6);
     for (let i = 0; i < path.length - 1; i++) {
       const a = path[i], b = path[i+1];
       const dir = new THREE.Vector3().subVectors(b, a);
@@ -1332,6 +1347,22 @@ renderer.domElement.addEventListener('mouseup', () => { dragging = null; control
 // to the mode's normal click behavior. on drag, the waypoint moves.
 let dragPress = null;
 const DRAG_PRESS_PX = 4;
+// double-click on a waypoint opens its station popover, regardless of mode.
+// faster than right-click → "open station info".
+renderer.domElement.addEventListener('dblclick', (ev) => {
+  setMouse(ev); raycaster.setFromCamera(mouse, camera);
+  const wp = pickWaypoint();
+  if (!wp) return;
+  ev.preventDefault();
+  const ln = data.lines.find(l => l.id === wp.lineId);
+  if (!ln) return;
+  const w = ln.waypoints[wp.wpIndex];
+  if (!w) return;
+  activeLineId = ln.id;
+  selectedWaypoints = [{ lineId: ln.id, wpIndex: wp.wpIndex }];
+  openPopover(w.gx, w.gy, w.plane, ln.id, wp.wpIndex);
+  rebuildSelection();
+});
 renderer.domElement.addEventListener('mousedown', (ev) => {
   if (ev.button !== 0) return;
   setMouse(ev); raycaster.setFromCamera(mouse, camera);
@@ -1488,7 +1519,9 @@ renderer.domElement.addEventListener('contextmenu', (ev) => {
   if (ev.altKey) { ev.preventDefault(); return; }
   ev.preventDefault();
   setMouse(ev); raycaster.setFromCamera(mouse, camera);
-  ctxmenu.innerHTML = '';
+  // reset menu fully — if no branch matches, the menu stays closed instead
+  // of lingering in 'open' state with no items.
+  closeCtxmenu();
   const main = document.getElementById('main').getBoundingClientRect();
   ctxmenu.style.left = (ev.clientX - main.left) + 'px';
   ctxmenu.style.top = (ev.clientY - main.top) + 'px';
@@ -1713,10 +1746,15 @@ renderer.domElement.addEventListener('contextmenu', (ev) => {
     return;
   }
 });
-window.addEventListener('mousedown', (ev) => {
-  // close ctxmenu on click anywhere except inside the menu itself
+// close ctxmenu on any outside interaction. mousedown handles immediate close,
+// click handles cases where a target swallowed mousedown (e.g. iframes).
+function maybeCloseCtxmenu(ev) {
   if (!ctxmenu.contains(ev.target)) closeCtxmenu();
-});
+}
+window.addEventListener('mousedown', maybeCloseCtxmenu, true);
+window.addEventListener('click', maybeCloseCtxmenu, true);
+// also ensure right-click that picks nothing still clears any stale menu
+// (e.g. previous menu lingering with 'open' class but empty items).
 
 // title/subtitle wiring. live-bind to data so they round-trip through json.
 data.title = data.title || '';
@@ -1892,7 +1930,9 @@ window.addEventListener('keydown', (ev) => {
   if (ev.key === '[') { activePlane = (activePlane - 1 + data.planes.length) % data.planes.length; rebuildAll(); }
   if (ev.key === ']') { activePlane = (activePlane + 1) % data.planes.length; rebuildAll(); }
   if (ev.key === 'Escape') {
-    // escape priorities: cancel lift > close popover > clear selection > undo last waypoint.
+    // escape priorities: ctxmenu > cancel lift > close popover > clear
+    // selection > undo last waypoint.
+    if (ctxmenu.classList.contains('open')) { closeCtxmenu(); return; }
     if (liftPending) { liftPending = null; rebuildHover(); return; }
     if (popoverState.open) { closePopover(); return; }
     if (selectedWaypoints.length) { selectedWaypoints = []; rebuildSelection(); return; }
@@ -2526,16 +2566,28 @@ function exportSvg(opts) {
     return [w.gx + o.x, w.gy + o.y];
   };
   function linePath(ln) {
-    const grid = ln.waypoints.map((_, i) => offsetWp(ln, i));
+    // dedupe consecutive coincident waypoints before smoothing.
+    // catmull-rom's centripetal parameterization divides by t1-t0; identical
+    // points make that zero and the whole curve goes NaN. fillet has a
+    // similar collapse. keep parallel wpIdx so nearest-input plane lookup
+    // still works after the dedupe shifts indices.
+    const rawGrid = ln.waypoints.map((_, i) => offsetWp(ln, i));
+    const grid = [], wpIdx = [];
+    for (let i = 0; i < rawGrid.length; i++) {
+      const p = rawGrid[i];
+      const last = grid.length ? grid[grid.length - 1] : null;
+      if (!last || Math.abs(last[0] - p[0]) > 1e-6 || Math.abs(last[1] - p[1]) > 1e-6) {
+        grid.push(p); wpIdx.push(i);
+      }
+    }
+    if (grid.length < 2) return [];
+    const fullRadii = radiiForLine(ln);
+    const dedupedRadii = wpIdx.map(i => fullRadii[i]);
     const curveMode = ln.curveMode || (ln.smooth === false ? 'sharp' : 'fillet');
     let smoothed;
     if (curveMode === 'spline') smoothed = catmullRom2D(grid, 12);
     else if (curveMode === 'sharp') smoothed = grid;
-    else smoothed = smoothCornersFlat(grid, radiiForLine(ln), 6);
-    // multi-plane lines: for each output point, find the nearest INPUT
-    // waypoint and project using THAT waypoint's plane. lets a single line
-    // rise/fall between planes — needed because the 3d editor already
-    // renders cross-plane lines but earlier we only used waypoints[0].plane.
+    else smoothed = smoothCornersFlat(grid, dedupedRadii, 6);
     return smoothed.map(p => {
       let bestIdx = 0, bestD = Infinity;
       for (let i = 0; i < grid.length; i++) {
@@ -2543,7 +2595,7 @@ function exportSvg(opts) {
         const d = dx * dx + dy * dy;
         if (d < bestD) { bestD = d; bestIdx = i; }
       }
-      return proj(p[0], p[1], ln.waypoints[bestIdx].plane);
+      return proj(p[0], p[1], ln.waypoints[wpIdx[bestIdx]].plane);
     });
   }
   const allPts = [];
@@ -3640,6 +3692,75 @@ animate();
 </body>
 </html>
 .updateProjectionMatrix();
+}, { passive: false });
+
+function updateHud() {
+  let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
+    (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
+  const ln = data.lines.find(l => l.id === activeLineId);
+  if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
+  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
+  if (hoverCell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
+  hud.innerHTML = html;
+  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (popoverState.open) positionPopover();
+  rebuildSelection();
+  updateHud();
+  renderer.render(scene, camera);
+}
+
+rebuildAll();
+applyResize();
+animate();
+</script>
+</body>
+</html>
+ 800);
+renderer.domElement.addEventListener('wheel', (ev) => {
+  ev.preventDefault();
+  const factor = ev.deltaY > 0 ? 0.9 : 1.111;
+  camera.zoom = Math.max(controls.minZoom, Math.min(controls.maxZoom, camera.zoom * factor));
+  camera.updateProjectionMatrix();
+}, { passive: false });
+
+function updateHud() {
+  let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
+    (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
+  const ln = data.lines.find(l => l.id === activeLineId);
+  if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
+  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
+  if (hoverCell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
+  hud.innerHTML = html;
+  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (popoverState.open) positionPopover();
+  rebuildSelection();
+  updateHud();
+  renderer.render(scene, camera);
+}
+
+rebuildAll();
+applyResize();
+animate();
+</script>
+</body>
+</html>
+ _lastSizeKey) { _lastSizeKey = key; applyResize(); }
+}, 800);
+renderer.domElement.addEventListener('wheel', (ev) => {
+  ev.preventDefault();
+  const factor = ev.deltaY > 0 ? 0.9 : 1.111;
+  camera.zoom = Math.max(controls.minZoom, Math.min(controls.maxZoom, camera.zoom * factor));
+  camera.updateProjectionMatrix();
 }, { passive: false });
 
 function updateHud() {
