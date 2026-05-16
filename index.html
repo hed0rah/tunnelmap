@@ -1484,27 +1484,34 @@ renderer.domElement.addEventListener('contextmenu', (ev) => {
       ctxmenu.appendChild(ctxItem('set active line', () => { activeLineId = ln.id; rebuildAll(); }));
       ctxmenu.appendChild(ctxItem('flip line direction', () => { ln.waypoints.reverse(); rebuildAll(); }));
       ctxmenu.appendChild(ctxItem('straighten this line', () => { straightenLine(ln); rebuildAll(); }));
-      // segment-level service: toggle whether the segment leaving this
-      // waypoint is abandoned or marked as a maintenance tunnel.
+      // segment-level state: direct picks for the segment leaving this wp.
+      // shows the current state up top with a checkmark; clicking another
+      // entry switches to it. mutually exclusive (segOut and segMaint can't
+      // both be true).
       if (wp.wpIndex < ln.waypoints.length - 1) {
-        const segOutNow = !!w.segOut;
-        const segMaintNow = !!w.segMaint;
-        ctxmenu.appendChild(ctxItem(
-          segOutNow ? 'restore next segment' : 'mark next segment abandoned',
-          () => { w.segOut = !segOutNow; if (!segOutNow) w.segMaint = false; rebuildAll(); refreshPreview(); }
-        ));
-        ctxmenu.appendChild(ctxItem(
-          segMaintNow ? 'next segment: not maintenance' : 'next segment: maintenance tunnel',
-          () => { w.segMaint = !segMaintNow; if (!segMaintNow) w.segOut = false; rebuildAll(); refreshPreview(); }
-        ));
+        const segCur = w.segOut ? 'abandoned' : w.segMaint ? 'maintenance' : 'normal';
+        ctxmenu.appendChild(ctxLabel('next segment: ' + segCur));
+        const setSeg = (state) => {
+          w.segOut = state === 'abandoned';
+          w.segMaint = state === 'maintenance';
+          rebuildAll(); refreshPreview();
+        };
+        for (const s of ['normal', 'maintenance', 'abandoned']) {
+          if (s === segCur) continue;
+          ctxmenu.appendChild(ctxItem('  → ' + s, () => setSeg(s)));
+        }
+        ctxmenu.appendChild(ctxSep());
       }
-      // line-level service cycle through all four states
-      const svcOrder = ['active', 'reduced', 'maintenance', 'abandoned'];
+      // line-level state: direct picks, current shown as label.
       const svcCur = ln.serviceState || 'active';
-      const svcNext = svcOrder[(svcOrder.indexOf(svcCur) + 1) % svcOrder.length];
-      ctxmenu.appendChild(ctxItem('line: ' + svcCur + ' → ' + svcNext, () => {
-        ln.serviceState = svcNext; rebuildAll(); refreshPreview();
-      }));
+      ctxmenu.appendChild(ctxLabel('line state: ' + svcCur));
+      for (const s of ['active', 'reduced', 'maintenance', 'abandoned']) {
+        if (s === svcCur) continue;
+        ctxmenu.appendChild(ctxItem('  → ' + s, () => {
+          ln.serviceState = s; rebuildAll(); refreshPreview();
+        }));
+      }
+      ctxmenu.appendChild(ctxSep());
       ctxmenu.appendChild(ctxItem('start new line from here', () => {
         // create a new line whose first waypoint sits exactly on this node.
         // useful for branching off an existing station/interchange.
@@ -1552,29 +1559,36 @@ renderer.domElement.addEventListener('contextmenu', (ev) => {
           rebuildAll(); refreshPreview();
         }
       }));
-      // style cycle
+      // style — direct pick list. label shows current.
       const styleList = ['solid', 'dashed', 'dotted', 'double', 'thin', 'thick'];
-      const curStyleIdx = Math.max(0, styleList.indexOf(ln.style || 'solid'));
-      const nextStyle = styleList[(curStyleIdx + 1) % styleList.length];
-      ctxmenu.appendChild(ctxItem('style: ' + (ln.style || 'solid') + ' → ' + nextStyle, () => {
-        ln.style = nextStyle; rebuildAll(); refreshPreview();
-      }));
-      // curve cycle
-      const curveList = ['fillet', 'spline', 'sharp'];
+      const curStyle = ln.style || 'solid';
+      ctxmenu.appendChild(ctxLabel('style: ' + curStyle));
+      for (const s of styleList) {
+        if (s === curStyle) continue;
+        ctxmenu.appendChild(ctxItem('  → ' + s, () => {
+          ln.style = s; rebuildAll(); refreshPreview();
+        }));
+      }
+      // curve mode — direct pick list
       const curCurve = ln.curveMode || (ln.smooth === false ? 'sharp' : 'fillet');
-      const nextCurve = curveList[(curveList.indexOf(curCurve) + 1) % curveList.length];
-      ctxmenu.appendChild(ctxItem('curve: ' + curCurve + ' → ' + nextCurve, () => {
-        ln.curveMode = nextCurve;
-        ln.smooth = nextCurve !== 'sharp';
-        rebuildLines(); refreshPreview();
-      }));
-      // service cycle
-      const svcList = ['active', 'reduced', 'maintenance', 'abandoned'];
+      ctxmenu.appendChild(ctxLabel('curve: ' + curCurve));
+      for (const c of ['fillet', 'spline', 'sharp']) {
+        if (c === curCurve) continue;
+        ctxmenu.appendChild(ctxItem('  → ' + c, () => {
+          ln.curveMode = c;
+          ln.smooth = c !== 'sharp';
+          rebuildLines(); refreshPreview();
+        }));
+      }
+      // service state — direct pick list
       const curSvc = ln.serviceState || 'active';
-      const nextSvc = svcList[(svcList.indexOf(curSvc) + 1) % svcList.length];
-      ctxmenu.appendChild(ctxItem('service: ' + curSvc + ' → ' + nextSvc, () => {
-        ln.serviceState = nextSvc; rebuildAll(); refreshPreview();
-      }));
+      ctxmenu.appendChild(ctxLabel('service: ' + curSvc));
+      for (const s of ['active', 'reduced', 'maintenance', 'abandoned']) {
+        if (s === curSvc) continue;
+        ctxmenu.appendChild(ctxItem('  → ' + s, () => {
+          ln.serviceState = s; rebuildAll(); refreshPreview();
+        }));
+      }
       ctxmenu.appendChild(ctxSep());
       ctxmenu.appendChild(ctxItem('flip direction', () => { ln.waypoints.reverse(); rebuildAll(); }));
       ctxmenu.appendChild(ctxItem('straighten', () => { straightenLine(ln); rebuildAll(); }));
@@ -2443,8 +2457,19 @@ function exportSvg(opts) {
     if (curveMode === 'spline') smoothed = catmullRom2D(grid, 12);
     else if (curveMode === 'sharp') smoothed = grid;
     else smoothed = smoothCornersFlat(grid, radiiForLine(ln), 6);
-    const plane = ln.waypoints[0].plane;
-    return smoothed.map(p => proj(p[0], p[1], plane));
+    // multi-plane lines: for each output point, find the nearest INPUT
+    // waypoint and project using THAT waypoint's plane. lets a single line
+    // rise/fall between planes — needed because the 3d editor already
+    // renders cross-plane lines but earlier we only used waypoints[0].plane.
+    return smoothed.map(p => {
+      let bestIdx = 0, bestD = Infinity;
+      for (let i = 0; i < grid.length; i++) {
+        const dx = p[0] - grid[i][0], dy = p[1] - grid[i][1];
+        const d = dx * dx + dy * dy;
+        if (d < bestD) { bestD = d; bestIdx = i; }
+      }
+      return proj(p[0], p[1], ln.waypoints[bestIdx].plane);
+    });
   }
   const allPts = [];
   for (const ln of data.lines) for (const p of linePath(ln)) allPts.push(p);
@@ -3369,6 +3394,30 @@ minZoom, Math.min(controls.maxZoom, camera.zoom * factor));
 function updateHud() {
   let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
     (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
+  const ln = data.lines.find(l => l.id === activeLineId);
+  if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
+  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
+  if (hoverCell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
+  hud.innerHTML = html;
+  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (popoverState.open) positionPopover();
+  rebuildSelection();
+  updateHud();
+  renderer.render(scene, camera);
+}
+
+rebuildAll();
+applyResize();
+animate();
+</script>
+</body>
+</html>
+ame : '?') + '</b><br>';
   const ln = data.lines.find(l => l.id === activeLineId);
   if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
   if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
