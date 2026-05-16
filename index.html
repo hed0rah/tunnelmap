@@ -744,7 +744,14 @@ function waypointOffset(line, i, corridors) {
 }
 function radiiForLine(ln) {
   const def = (ln.smoothRadius != null) ? ln.smoothRadius : SMOOTH_R;
-  return ln.waypoints.map(wp => (wp.cornerRadius != null) ? wp.cornerRadius : def);
+  return ln.waypoints.map((wp, i, arr) => {
+    // force sharp corner at plane-change waypoints. otherwise fillet
+    // smoothing replaces the waypoint with enter/exit points, eating the
+    // upper-plane peak — line never rises into the off-plane waypoint.
+    if (i > 0 && arr[i-1].plane !== wp.plane) return 0;
+    if (i < arr.length - 1 && arr[i+1].plane !== wp.plane) return 0;
+    return (wp.cornerRadius != null) ? wp.cornerRadius : def;
+  });
 }
 
 // quadratic-bezier corner fillet on a list of Vector3 in xz plane.
@@ -1660,6 +1667,16 @@ renderer.domElement.addEventListener('contextmenu', (ev) => {
       activeLineId = id; mode = 'draw'; rebuildAll();
     }));
     ctxmenu.appendChild(ctxItem('switch to this plane', () => { activePlane = cell.plane; rebuildAll(); }));
+    // offer deselect when there's an active line — kills the ghost preview
+    // from draw mode and clears any selection in one step.
+    if (activeLineId || (selectedWaypoints && selectedWaypoints.length)) {
+      ctxmenu.appendChild(ctxSep());
+      ctxmenu.appendChild(ctxItem('deselect (clear active line)', () => {
+        activeLineId = null;
+        selectedWaypoints = [];
+        rebuildAll(); rebuildSelection();
+      }));
+    }
     openCtx();
     return;
   }
@@ -3418,6 +3435,31 @@ animate();
 </body>
 </html>
 ame : '?') + '</b><br>';
+  const ln = data.lines.find(l => l.id === activeLineId);
+  if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
+  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
+  if (hoverCell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
+  hud.innerHTML = html;
+  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (popoverState.open) positionPopover();
+  rebuildSelection();
+  updateHud();
+  renderer.render(scene, camera);
+}
+
+rebuildAll();
+applyResize();
+animate();
+</script>
+</body>
+</html>
+b> &middot; plane <b>' +
+    (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
   const ln = data.lines.find(l => l.id === activeLineId);
   if (ln) html += 'line <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
   if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
