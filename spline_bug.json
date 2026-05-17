@@ -1,0 +1,616 @@
+{
+  "planes": [
+    {
+      "name": "Surface",
+      "z": 0,
+      "tint": "#f0eadf"
+    },
+    {
+      "name": "Mid Level",
+      "z": 3.6,
+      "tint": "#ece5d6"
+    },
+    {
+      "name": "Sky Lines",
+      "z": 7.2,
+      "tint": "#e8e0cd"
+    }
+  ],
+  "lines": [
+    {
+      "id": "vco",
+      "name": "VCO",
+      "color": "#d62828",
+      "style": "solid",
+      "waypoints": [
+        {
+          "gx": -7,
+          "gy": -4,
+          "plane": 0
+        },
+        {
+          "gx": 6,
+          "gy": -4,
+          "plane": 0
+        },
+        {
+          "gx": 4,
+          "gy": 0,
+          "plane": 0
+        },
+        {
+          "gx": 4,
+          "gy": 0,
+          "plane": 0
+        },
+        {
+          "gx": 4,
+          "gy": 0,
+          "plane": 0
+        },
+        {
+          "gx": 4,
+          "gy": 0,
+          "plane": 0
+        },
+        {
+          "gx": 3,
+          "gy": 4,
+          "plane": 0
+        },
+        {
+          "gx": 1,
+          "gy": 2,
+          "plane": 0,
+          "segOut": false,
+          "segMaint": true
+        },
+        {
+          "gx": 1,
+          "gy": 0,
+          "plane": 0
+        }
+      ],
+      "curveMode": "spline",
+      "smooth": true
+    },
+    {
+      "id": "vcf",
+      "name": "VCF",
+      "color": "#1565c0",
+      "style": "dashed",
+      "waypoints": [
+        {
+          "gx": -3,
+          "gy": -5,
+          "plane": 0
+        },
+        {
+          "gx": -3,
+          "gy": 5,
+          "plane": 0
+        }
+      ]
+    },
+    {
+      "id": "vca",
+      "name": "VCA",
+      "color": "#2e7d32",
+      "style": "dotted",
+      "waypoints": [
+        {
+          "gx": -6,
+          "gy": 5,
+          "plane": 0
+        },
+        {
+          "gx": -3,
+          "gy": 2,
+          "plane": 0
+        },
+        {
+          "gx": 1,
+          "gy": -2,
+          "plane": 0
+        },
+        {
+          "gx": 5,
+          "gy": -2,
+          "plane": 0
+        }
+      ]
+    },
+    {
+      "id": "bus",
+      "name": "BUS",
+      "color": "#5d4037",
+      "style": "double",
+      "waypoints": [
+        {
+          "gx": -7,
+          "gy": -1,
+          "plane": 0
+        },
+        {
+          "gx": -3,
+          "gy": -4,
+          "plane": 0
+        },
+        {
+          "gx": -3,
+          "gy": 2,
+          "plane": 0
+        },
+        {
+          "gx": -1,
+          "gy": 4,
+          "plane": 0
+        }
+      ]
+    },
+    {
+      "id": "lfo",
+      "name": "LFO",
+      "color": "#f9a825",
+      "style": "thick",
+      "waypoints": [
+        {
+          "gx": -6,
+          "gy": -2,
+          "plane": 1
+        },
+        {
+          "gx": 6,
+          "gy": -2,
+          "plane": 1
+        }
+      ]
+    },
+    {
+      "id": "eg",
+      "name": "EG",
+      "color": "#c2185b",
+      "style": "thin",
+      "waypoints": [
+        {
+          "gx": 2,
+          "gy": -4,
+          "plane": 1
+        },
+        {
+          "gx": 2,
+          "gy": 5,
+          "plane": 1
+        }
+      ]
+    },
+    {
+      "id": "mix",
+      "name": "MIX",
+      "color": "#00838f",
+      "style": "dashed",
+      "waypoints": [
+        {
+          "gx": -5,
+          "gy": 4,
+          "plane": 1
+        },
+        {
+          "gx": -1,
+          "gy": 0,
+          "plane": 1
+        },
+        {
+          "gx": 4,
+          "gy": 0,
+          "plane": 1
+        }
+      ]
+    },
+    {
+      "id": "trk",
+      "name": "TRK",
+      "color": "#37474f",
+      "style": "dotted",
+      "waypoints": [
+        {
+          "gx": -3,
+          "gy": -2,
+          "plane": 1
+        },
+        {
+          "gx": 2,
+          "gy": -2,
+          "plane": 1
+        },
+        {
+          "gx": 2,
+          "gy": 4,
+          "plane": 1
+        }
+      ]
+    },
+    {
+      "id": "smp",
+      "name": "SMP",
+      "color": "#6a1b9a",
+      "style": "solid",
+      "waypoints": [
+        {
+          "gx": -5,
+          "gy": -1,
+          "plane": 2
+        },
+        {
+          "gx": 5,
+          "gy": -1,
+          "plane": 2
+        }
+      ]
+    },
+    {
+      "id": "seq",
+      "name": "SEQ",
+      "color": "#ef6c00",
+      "style": "double",
+      "waypoints": [
+        {
+          "gx": -3,
+          "gy": 4,
+          "plane": 2
+        },
+        {
+          "gx": -3,
+          "gy": 1,
+          "plane": 2
+        },
+        {
+          "gx": 3,
+          "gy": 1,
+          "plane": 2
+        },
+        {
+          "gx": 3,
+          "gy": 4,
+          "plane": 2
+        }
+      ]
+    },
+    {
+      "id": "brn",
+      "name": "BRN",
+      "color": "#558b2f",
+      "style": "solid",
+      "waypoints": [
+        {
+          "gx": -1,
+          "gy": -1,
+          "plane": 2
+        },
+        {
+          "gx": 3,
+          "gy": -1,
+          "plane": 2
+        },
+        {
+          "gx": 3,
+          "gy": 1,
+          "plane": 2
+        }
+      ]
+    },
+    {
+      "id": "lmp8s5y99",
+      "name": "NEW",
+      "color": "#d62828",
+      "style": "thick",
+      "waypoints": [
+        {
+          "gx": 4,
+          "gy": 0,
+          "plane": 0
+        },
+        {
+          "gx": 0,
+          "gy": 6,
+          "plane": 0
+        }
+      ]
+    },
+    {
+      "id": "lmp8s6161",
+      "name": "NEW",
+      "color": "#1565c0",
+      "style": "solid",
+      "waypoints": [
+        {
+          "gx": -1,
+          "gy": 0,
+          "plane": 0
+        },
+        {
+          "gx": -1,
+          "gy": -1,
+          "plane": 0
+        }
+      ]
+    },
+    {
+      "id": "lmp8s6fi0",
+      "name": "NEW",
+      "color": "#2e7d32",
+      "style": "solid",
+      "waypoints": [
+        {
+          "gx": -1,
+          "gy": -1,
+          "plane": 0
+        },
+        {
+          "gx": -7,
+          "gy": 1,
+          "plane": 0
+        },
+        {
+          "gx": -3,
+          "gy": -3,
+          "plane": 0,
+          "cornerRadius": 2.6
+        },
+        {
+          "gx": 2,
+          "gy": -3,
+          "plane": 0
+        }
+      ]
+    }
+  ],
+  "stations": [
+    {
+      "id": "s_vco_w",
+      "gx": -7,
+      "gy": -4,
+      "plane": 0,
+      "name": "VCO West",
+      "kind": "terminal",
+      "shape": "circle"
+    },
+    {
+      "id": "s_vco_e",
+      "gx": 6,
+      "gy": -4,
+      "plane": 0,
+      "name": "VCO East",
+      "kind": "terminal",
+      "shape": "square"
+    },
+    {
+      "id": "s_vcf_n",
+      "gx": -3,
+      "gy": -5,
+      "plane": 0,
+      "name": "VCF North",
+      "kind": "terminal",
+      "shape": "diamond"
+    },
+    {
+      "id": "s_vcf_s",
+      "gx": -3,
+      "gy": 5,
+      "plane": 0,
+      "name": "VCF South",
+      "kind": "terminal",
+      "shape": "triangle"
+    },
+    {
+      "id": "s_vca_w",
+      "gx": -6,
+      "gy": 5,
+      "plane": 0,
+      "name": "VCA Far",
+      "kind": "terminal",
+      "shape": "plus"
+    },
+    {
+      "id": "s_vca_e",
+      "gx": 5,
+      "gy": -2,
+      "plane": 0,
+      "name": "VCA East",
+      "kind": "terminal",
+      "shape": "ring"
+    },
+    {
+      "id": "s_fj",
+      "gx": -3,
+      "gy": -4,
+      "plane": 0,
+      "name": "Filter Jct",
+      "kind": "interchange",
+      "shape": "circle"
+    },
+    {
+      "id": "s_bb",
+      "gx": -3,
+      "gy": 2,
+      "plane": 0,
+      "name": "Bass Bin",
+      "kind": "interchange",
+      "shape": "circle"
+    },
+    {
+      "id": "s_lfo_w",
+      "gx": -6,
+      "gy": -2,
+      "plane": 1,
+      "name": "LFO West",
+      "kind": "terminal",
+      "shape": "square"
+    },
+    {
+      "id": "s_lfo_e",
+      "gx": 6,
+      "gy": -2,
+      "plane": 1,
+      "name": "LFO East",
+      "kind": "terminal",
+      "shape": "square"
+    },
+    {
+      "id": "s_tri",
+      "gx": 2,
+      "gy": -2,
+      "plane": 1,
+      "name": "Triangle",
+      "kind": "interchange",
+      "shape": "diamond"
+    },
+    {
+      "id": "s_smp_w",
+      "gx": -5,
+      "gy": -1,
+      "plane": 2,
+      "name": "Sampler W",
+      "kind": "terminal",
+      "shape": "plus"
+    },
+    {
+      "id": "s_smp_e",
+      "gx": 5,
+      "gy": -1,
+      "plane": 2,
+      "name": "Sampler E",
+      "kind": "terminal",
+      "shape": "plus"
+    },
+    {
+      "id": "s_step1",
+      "gx": -3,
+      "gy": 4,
+      "plane": 2,
+      "name": "Step One",
+      "kind": "terminal",
+      "shape": "ring"
+    },
+    {
+      "id": "s_step8",
+      "gx": 3,
+      "gy": 4,
+      "plane": 2,
+      "name": "Step Eight",
+      "kind": "terminal",
+      "shape": "ring"
+    },
+    {
+      "id": "s_4_0_0",
+      "gx": 4,
+      "gy": 0,
+      "plane": 0,
+      "name": "",
+      "kind": "regular",
+      "shape": "circle"
+    },
+    {
+      "id": "s_-3_-3_0",
+      "gx": -3,
+      "gy": -3,
+      "plane": 0,
+      "name": "",
+      "kind": "regular",
+      "shape": "circle"
+    },
+    {
+      "id": "s_1_2_0",
+      "gx": 1,
+      "gy": 2,
+      "plane": 0,
+      "name": "",
+      "kind": "regular",
+      "shape": "circle"
+    }
+  ],
+  "lifts": [
+    {
+      "a": {
+        "gx": 3,
+        "gy": -4,
+        "plane": 0
+      },
+      "b": {
+        "gx": 2,
+        "gy": -2,
+        "plane": 1
+      }
+    },
+    {
+      "a": {
+        "gx": -3,
+        "gy": 2,
+        "plane": 0
+      },
+      "b": {
+        "gx": -1,
+        "gy": 0,
+        "plane": 1
+      }
+    },
+    {
+      "a": {
+        "gx": 4,
+        "gy": 0,
+        "plane": 1
+      },
+      "b": {
+        "gx": 3,
+        "gy": 1,
+        "plane": 2
+      }
+    },
+    {
+      "a": {
+        "gx": -1,
+        "gy": 0,
+        "plane": 1
+      },
+      "b": {
+        "gx": -3,
+        "gy": 1,
+        "plane": 2
+      }
+    },
+    {
+      "a": {
+        "gx": 2,
+        "gy": 4,
+        "plane": 1
+      },
+      "b": {
+        "gx": 3,
+        "gy": 4,
+        "plane": 2
+      }
+    }
+  ],
+  "title": "",
+  "subtitle": "",
+  "theme": "cool",
+  "legend": {
+    "show": false,
+    "corner": "br",
+    "endpoints": false
+  },
+  "viewPreset": "iso-ne",
+  "camera": {
+    "pos": [
+      -19.79159069332035,
+      16.39687755041417,
+      21.610694358188937
+    ],
+    "target": [
+      4.646543369520616,
+      3.599999999999999,
+      6.774300191168911
+    ],
+    "zoom": 1.1103335666277818
+  }
+}

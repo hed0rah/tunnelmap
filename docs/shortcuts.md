@@ -5,14 +5,35 @@ understands. it's also shown in compressed form inside the sidebar.
 
 ## modes
 
-| key | mode | what it does on left-click |
+three modes only. most interaction is direct manipulation that works
+regardless of mode.
+
+| key | mode | what it changes |
 |---|---|---|
-| `d` | draw | extend the active line with a new waypoint at the cursor |
-| `b` | bend | insert a bend waypoint into the nearest line segment under the cursor |
-| `m` | move | drag a waypoint sphere to relocate it on the grid |
-| `x` | delete | click a waypoint to remove it, or click a lift to remove that |
-| `l` | lift | click two waypoints on different planes to connect them |
-| `s` | select | click to select one waypoint, drag to marquee multiple |
+| `e` | edit (default) | click selects, drag moves, drag-empty marquees |
+| `d` | draw | click empty extends the active line |
+| `l` | lift | two waypoint clicks (different planes) create a lift |
+
+old `b`/`m`/`x`/`s` keys silently route to edit mode now — kept as
+muscle-memory back-compat.
+
+## core gestures (work in any mode)
+
+| input | action |
+|---|---|
+| click waypoint | select + make line active |
+| click tube | select that line + make active |
+| click empty (different plane) | switch active plane to that one |
+| click empty (same plane) | marquee on drag, deselect on no-drag |
+| drag waypoint | move along grid with octolinear snap |
+| shift+drag waypoint | move between planes (drag onto another plane mesh) |
+| drag from empty | marquee select waypoints |
+| double-click waypoint | open the station popover |
+| double-click tube | insert a bend at cursor (was the old bend mode) |
+| double-click empty | start a new line + drop into draw mode |
+| right-click target | context menu for waypoint / line / lift |
+| right-click empty | deselect everything (no menu) |
+| delete / backspace | delete selected waypoints |
 
 ## planes
 
