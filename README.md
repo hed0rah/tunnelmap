@@ -7,7 +7,7 @@ underground systems.
 it's a single html file. open it in any modern browser. no build, no install,
 no server. draw lines, stack planes, export print-ready svg.
 
-![screenshot placeholder — drop a png here](docs/screenshot.png)
+<img width="2047" height="988" alt="image" src="https://github.com/user-attachments/assets/07f05c32-2d2d-45f5-b935-e4f1a8476b02" />
 
 ## try it
 
