@@ -1123,6 +1123,15 @@ function rebuildStations() {
   }
 }
 
+// lift kind palette. each gets a distinct color + 3d visual signature so
+// the user can tell stairs from elevator from escalator at a glance.
+const LIFT_KINDS = {
+  standard:  { color: 0x3a3a3a, label: 'standard' },
+  elevator:  { color: 0x205088, label: 'elevator' },
+  escalator: { color: 0x886020, label: 'escalator' },
+  stairs:    { color: 0x556644, label: 'stairs' },
+  ramp:      { color: 0x884060, label: 'ramp' },
+};
 function rebuildLifts() {
   clearGroup(liftsGroup);
   for (const lf of data.lifts) {
@@ -1131,11 +1140,31 @@ function rebuildLifts() {
     const dir = new THREE.Vector3().subVectors(b, a);
     const len = dir.length();
     if (len < 1e-6) continue;
-    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, len, 6),
-      new THREE.MeshBasicMaterial({ color: 0x3a3a3a }));
+    const kind = (lf.kind && LIFT_KINDS[lf.kind]) ? lf.kind : 'standard';
+    const mat = new THREE.MeshBasicMaterial({ color: LIFT_KINDS[kind].color });
+    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, len, 6), mat);
     cyl.position.copy(a).addScaledVector(dir, 0.5);
     cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+    cyl.userData = { liftIdx: data.lifts.indexOf(lf) };
     liftsGroup.add(cyl);
+    // kind-specific embellishments along the cylinder length
+    if (kind === 'elevator' || kind === 'stairs' || kind === 'escalator') {
+      const ticks = kind === 'stairs' ? 8 : kind === 'escalator' ? 6 : 4;
+      const tickMat = new THREE.MeshBasicMaterial({ color: LIFT_KINDS[kind].color });
+      for (let i = 1; i < ticks; i++) {
+        const t = i / ticks;
+        const cube = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 0.18), tickMat);
+        cube.position.copy(a).addScaledVector(dir, t);
+        if (kind === 'escalator') cube.rotation.y = Math.PI / 4;
+        liftsGroup.add(cube);
+      }
+    } else if (kind === 'ramp') {
+      // single midpoint marker pill
+      const cube = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.04, 0.08),
+        new THREE.MeshBasicMaterial({ color: LIFT_KINDS[kind].color }));
+      cube.position.copy(a).addScaledVector(dir, 0.5);
+      liftsGroup.add(cube);
+    }
   }
 }
 
@@ -1449,10 +1478,26 @@ renderer.domElement.addEventListener('dblclick', (ev) => {
     if (!ln) return;
     const w = ln.waypoints[wp.wpIndex];
     if (!w) return;
+    // pull active plane to this wp's plane so subsequent clicks register.
+    activePlane = w.plane;
+    if (mode === 'draw') {
+      // in draw mode, double-click on a wp branches a new line from there
+      // (matches the user's mental model: "draw a line starting at this node").
+      const id = 'l' + Date.now().toString(36);
+      const used = new Set(data.lines.map(l => l.color));
+      const color = palette.find(c => !used.has(c)) || palette[data.lines.length % palette.length];
+      data.lines.push({ id, name: 'NEW', color, style: ln.style || 'solid',
+        waypoints: [{ gx: w.gx, gy: w.gy, plane: w.plane }] });
+      activeLineId = id;
+      selectedWaypoints = [];
+      rebuildAll(); rebuildSelection();
+      return;
+    }
+    // edit mode (default): double-click opens the station popover.
     activeLineId = ln.id;
     selectedWaypoints = [{ lineId: ln.id, wpIndex: wp.wpIndex }];
     openPopover(w.gx, w.gy, w.plane, ln.id, wp.wpIndex);
-    rebuildSelection();
+    rebuildAll(); rebuildSelection();
     return;
   }
   // double-click on a line body: insert a bend at the clicked cell on the
@@ -1821,7 +1866,21 @@ renderer.domElement.addEventListener('contextmenu', (ev) => {
       if (d < bestD) { bestD = d; bestIdx = i; }
     }
     if (bestIdx >= 0) {
-      ctxmenu.appendChild(ctxLabel('lift'));
+      const lf = data.lifts[bestIdx];
+      const curKind = lf.kind || 'standard';
+      ctxmenu.appendChild(ctxLabel('lift · ' + curKind));
+      // direct-pick list of kinds (skip current)
+      for (const k of ['standard', 'elevator', 'escalator', 'stairs', 'ramp']) {
+        if (k === curKind) continue;
+        ctxmenu.appendChild(ctxItem('  → ' + k, () => {
+          lf.kind = k; rebuildAll(); refreshPreview();
+        }));
+      }
+      ctxmenu.appendChild(ctxItem('rename...', () => {
+        const v = prompt('lift label (e.g. "Elevator 3")', lf.name || '');
+        if (v != null) { lf.name = v; rebuildAll(); refreshPreview(); }
+      }));
+      ctxmenu.appendChild(ctxSep());
       ctxmenu.appendChild(ctxItem('delete lift', () => {
         data.lifts.splice(bestIdx, 1); rebuildAll();
       }, 'danger'));
@@ -2026,12 +2085,17 @@ window.addEventListener('keydown', (ev) => {
   if (ev.key === '[') { activePlane = (activePlane - 1 + data.planes.length) % data.planes.length; rebuildAll(); }
   if (ev.key === ']') { activePlane = (activePlane + 1) % data.planes.length; rebuildAll(); }
   if (ev.key === 'Escape') {
-    // escape priorities: ctxmenu > cancel lift > close popover > clear
-    // selection > undo last waypoint.
+    // escape priorities: ctxmenu > popover > lift pending > clear ALL
+    // selection state (selection + active line) in one press > undo last wp.
     if (ctxmenu.classList.contains('open')) { closeCtxmenu(); return; }
-    if (liftPending) { liftPending = null; rebuildHover(); return; }
     if (popoverState.open) { closePopover(); return; }
-    if (selectedWaypoints.length) { selectedWaypoints = []; rebuildSelection(); return; }
+    if (liftPending) { liftPending = null; rebuildHover(); return; }
+    if (selectedWaypoints.length || activeLineId) {
+      selectedWaypoints = [];
+      activeLineId = null;
+      rebuildAll(); rebuildSelection();
+      return;
+    }
     const ln = data.lines.find(l => l.id === activeLineId);
     if (ln && ln.waypoints.length > 0) { ln.waypoints.pop(); rebuildAll(); }
   }
@@ -2473,17 +2537,22 @@ window.addEventListener('mouseup', (ev) => {
       const ln = data.lines.find(l => l.id === wp.lineId);
       if (ln) {
         const w = ln.waypoints[wp.wpIndex];
+        // clicking a waypoint always pulls activeLineId AND activePlane to
+        // wherever the click landed. user's mental model: "I'm now working
+        // with that node," which means its line and its plane.
+        activeLineId = ln.id;
+        if (w && w.plane !== activePlane) activePlane = w.plane;
         if (shift) {
           // shift-click: toggle membership without opening popover. lets the
           // user accumulate a multi-selection for bulk ops.
           const idx = selectedWaypoints.findIndex(s => s.lineId === wp.lineId && s.wpIndex === wp.wpIndex);
           if (idx >= 0) selectedWaypoints.splice(idx, 1);
           else selectedWaypoints.push({ lineId: ln.id, wpIndex: wp.wpIndex });
-          rebuildSelection();
+          rebuildAll(); rebuildSelection();
         } else {
           openPopover(w.gx, w.gy, w.plane, ln.id, wp.wpIndex);
           selectedWaypoints = [{ lineId: ln.id, wpIndex: wp.wpIndex }];
-          rebuildSelection();
+          rebuildAll(); rebuildSelection();
         }
       }
     }
@@ -2791,12 +2860,59 @@ function exportSvg(opts) {
     parts.push('<polygon points="' + c + '" fill="' + planeFill +
       '" stroke="' + planeStroke + '" stroke-width="0.6" opacity="' + (nocolor ? '0.45' : '0.6') + '"/>');
   });
+  // lift styling per kind. each kind reads with a distinct rhythm so
+  // stairs/elevator/escalator/ramp differentiate at a glance in print.
+  const liftStyleFor = (kind) => {
+    if (kind === 'elevator')  return { dash: '8,4',    width: 2.8, accent: 'rect' };
+    if (kind === 'escalator') return { dash: '2,3,8,3', width: 2.6, accent: 'arrow' };
+    if (kind === 'stairs')    return { dash: '1.5,2',  width: 2.4, accent: 'steps' };
+    if (kind === 'ramp')      return { dash: null,     width: 2.0, accent: 'none' };
+    return                         { dash: '3.5,3',    width: 2.4, accent: 'none' };
+  };
   for (const lf of data.lifts) {
     const a = proj(lf.a.gx, lf.a.gy, lf.a.plane);
     const b = proj(lf.b.gx, lf.b.gy, lf.b.plane);
+    const lk = lf.kind || 'standard';
+    const ls = liftStyleFor(lk);
     parts.push('<line x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) +
       '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) +
-      '" stroke="' + liftStroke + '" stroke-width="2.4" stroke-dasharray="3.5,3" stroke-linecap="round"/>');
+      '" stroke="' + liftStroke + '" stroke-width="' + ls.width +
+      (ls.dash ? '" stroke-dasharray="' + ls.dash : '') +
+      '" stroke-linecap="round"/>');
+    // accent embellishment along the lift midpoint to make the kind obvious
+    if (ls.accent !== 'none') {
+      const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+      const dx = b[0] - a[0], dy = b[1] - a[1];
+      const L = Math.hypot(dx, dy);
+      if (L > 1e-6) {
+        const ux = dx / L, uy = dy / L;
+        if (ls.accent === 'rect') {
+          // small square at midpoint = elevator cab
+          parts.push('<rect x="' + (mx - 4).toFixed(1) + '" y="' + (my - 4).toFixed(1) +
+            '" width="8" height="8" fill="' + liftStroke + '"/>');
+        } else if (ls.accent === 'arrow') {
+          // chevron pointing along the line direction = escalator
+          const px = -uy, py = ux;
+          const tip = [mx + ux * 5, my + uy * 5];
+          const base1 = [mx - ux * 3 + px * 4, my - uy * 3 + py * 4];
+          const base2 = [mx - ux * 3 - px * 4, my - uy * 3 - py * 4];
+          parts.push('<polygon points="' +
+            tip[0].toFixed(1) + ',' + tip[1].toFixed(1) + ' ' +
+            base1[0].toFixed(1) + ',' + base1[1].toFixed(1) + ' ' +
+            base2[0].toFixed(1) + ',' + base2[1].toFixed(1) +
+            '" fill="' + liftStroke + '"/>');
+        } else if (ls.accent === 'steps') {
+          // three tiny perpendicular ticks = stairs
+          const px = -uy, py = ux;
+          for (const t of [-6, 0, 6]) {
+            const cx = mx + ux * t, cy = my + uy * t;
+            parts.push('<line x1="' + (cx + px * 3).toFixed(1) + '" y1="' + (cy + py * 3).toFixed(1) +
+              '" x2="' + (cx - px * 3).toFixed(1) + '" y2="' + (cy - py * 3).toFixed(1) +
+              '" stroke="' + liftStroke + '" stroke-width="1.4" stroke-linecap="round"/>');
+          }
+        }
+      }
+    }
   }
   for (let li = 0; li < data.lines.length; li++) {
     const ln = data.lines[li];
@@ -3748,6 +3864,148 @@ function animate() {
 }
 
 // seed the recent-colors row from the initial line set so it isn't empty.
+for (const ln of data.lines) noteRecentColor(ln.color);
+rebuildAll();
+applyResize();
+animate();
+</script>
+</body>
+</html>
+ togglePreviewBtn = document.getElementById('toggle-preview');
+const closePreviewBtn = document.getElementById('close-preview');
+const toggleBwBtn = document.getElementById('toggle-bw');
+let previewOpen = false;
+let previewTimer = null;
+let lastPreviewState = '';
+function refreshPreview() {
+  if (!previewOpen) return;
+  const svg = exportSvg({ mode: bwMode });
+  if (!svg) return;
+  const themeBg = (THEMES[data.theme] && THEMES[data.theme].paper) || '#faf8f3';
+  const bg = bwMode === 'color' ? themeBg : '#ffffff';
+  const scaled = svg.replace(/(<svg[^>]*?)\s+width="1400"/, '$1');
+  previewFrame.srcdoc =
+    '<html><head><style>' +
+      'html,body{margin:0;height:100%;background:' + bg + ';}' +
+      'body{display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;}' +
+      'svg{display:block;width:100%;height:auto;max-width:100%;max-height:100%;}' +
+    '</style></head><body>' + scaled + '</body></html>';
+}
+function schedulePreview() {
+  if (previewTimer) clearTimeout(previewTimer);
+  previewTimer = setTimeout(refreshPreview, 200);
+}
+toggleBwBtn.onclick = () => {
+  bwMode = bwMode === 'color' ? 'mono' : bwMode === 'mono' ? 'grey' : 'color';
+  toggleBwBtn.textContent = bwMode === 'color' ? 'B&W' : bwMode === 'mono' ? 'grey' : 'color';
+  toggleBwBtn.classList.toggle('active', bwMode !== 'color');
+  refreshPreview();
+};
+const liveToggleBtn = document.getElementById('live-toggle');
+function setPreviewOpen(open) {
+  previewOpen = open;
+  previewPane.classList.toggle('open', open);
+  togglePreviewBtn.classList.toggle('active', open);
+  liveToggleBtn.classList.toggle('active', open);
+  if (open) refreshPreview();
+}
+togglePreviewBtn.onclick = () => setPreviewOpen(!previewOpen);
+liveToggleBtn.onclick = () => setPreviewOpen(!previewOpen);
+closePreviewBtn.onclick = () => setPreviewOpen(false);
+setInterval(() => {
+  if (!previewOpen) return;
+  const cur = JSON.stringify(data);
+  if (cur !== lastPreviewState) { schedulePreview(); lastPreviewState = cur; }
+}, 250);
+
+function applyResize() {
+  const w = container.clientWidth, h = container.clientHeight;
+  if (w < 1 || h < 1) return;
+  const a = w / h;
+  camera.left = -FRUSTUM*a/2; camera.right = FRUSTUM*a/2;
+  camera.top = FRUSTUM/2; camera.bottom = -FRUSTUM/2;
+  camera.updateProjectionMatrix();
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(w, h);
+}
+const ro = new ResizeObserver(applyResize);
+ro.observe(container);
+window.addEventListener('resize', applyResize);
+function watchDpr() {
+  const mq = window.matchMedia('(resolution: ' + window.devicePixelRatio + 'dppx)');
+  const onChange = () => { applyResize(); watchDpr(); };
+  mq.addEventListener('change', onChange, { once: true });
+}
+watchDpr();
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) applyResize();
+});
+window.addEventListener('focus', applyResize);
+let _lastSizeKey = '';
+setInterval(() => {
+  const key = container.clientWidth + 'x' + container.clientHeight + '@' + window.devicePixelRatio;
+  if (key !== _lastSizeKey) { _lastSizeKey = key; applyResize(); }
+}, 800);
+renderer.domElement.addEventListener('wheel', (ev) => {
+  ev.preventDefault();
+  const factor = ev.deltaY > 0 ? 0.9 : 1.111;
+  camera.zoom = Math.max(controls.minZoom, Math.min(controls.maxZoom, camera.zoom * factor));
+  camera.updateProjectionMatrix();
+}, { passive: false });
+
+function updateHud() {
+  let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
+    (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
+  const ln = data.lines.find(l => l.id === activeLineId);
+  if (ln) html += 'active <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
+  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
+  if (hoverTarget) {
+    if (hoverTarget.kind === 'waypoint') {
+      const hl = data.lines.find(l => l.id === hoverTarget.lineId);
+      if (hl) html += '<span style="color:var(--ink-mute)">over wp on </span><b style="color:' + hl.color + '">' + hl.name + '</b>';
+    } else if (hoverTarget.kind === 'line') {
+      const hl = data.lines.find(l => l.id === hoverTarget.lineId);
+      if (hl) html += '<span style="color:var(--ink-mute)">over line </span><b style="color:' + hl.color + '">' + hl.name + '</b>';
+    } else if (hoverTarget.kind === 'empty' && hoverCell) {
+      html += '<span style="color:var(--ink-mute)">cell ' + hoverCell.gx + ', ' + hoverCell.gy + '</span>';
+    }
+  } else if (hoverCell) {
+    html += '<span style="color:var(--ink-mute)">cell ' + hoverCell.gx + ', ' + hoverCell.gy + '</span>';
+  }
+  hud.innerHTML = html;
+  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (popoverState.open) positionPopover();
+  rebuildSelection();
+  updateHud();
+  renderer.render(scene, camera);
+}
+
+for (const ln of data.lines) noteRecentColor(ln.color);
+rebuildAll();
+applyResize();
+animate();
+</script>
+</body>
+</html>
+ell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
+  hud.innerHTML = html;
+  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (popoverState.open) positionPopover();
+  rebuildSelection();
+  updateHud();
+  renderer.render(scene, camera);
+}
+
 for (const ln of data.lines) noteRecentColor(ln.color);
 rebuildAll();
 applyResize();
