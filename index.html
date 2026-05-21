@@ -190,14 +190,25 @@ html, body { height: 100%; font-family: Inter, Helvetica, Arial, sans-serif;
   font-size: 14px; font-weight: 600; letter-spacing: 0.4px; pointer-events: none;
   opacity: 0; transition: opacity 240ms; z-index: 90; font-family: 'Space Grotesk', Inter, sans-serif; }
 #flash.show { opacity: 0.92; }
+#station-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 40;
+  display: none; overflow: hidden; }
+#station-overlay.show { display: block; }
+.station-label { position: absolute; top: 0; left: 0;
+  background: rgba(255,255,255,0.88); color: var(--ink);
+  padding: 1px 5px; border-radius: 3px; font-size: 10px; font-weight: 500;
+  border: 1px solid var(--ui-border); white-space: nowrap;
+  font-family: 'Space Grotesk', Inter, sans-serif; line-height: 1.4;
+  transform: translate(-9999px, -9999px); /* offscreen until positioned */ }
 #hud { top: 14px; right: 14px; }
-#live-toggle { position: absolute; bottom: 14px; right: 96px;
+#live-toggle, #labels-toggle { position: absolute; bottom: 14px;
   background: rgba(255,255,255,0.85); border: 1px solid var(--ui-border);
   color: var(--ink); padding: 5px 14px; border-radius: 4px;
   font: inherit; font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
   cursor: pointer; line-height: 1; height: 22px; }
-#live-toggle:hover { background: var(--ui-bg-soft); }
-#live-toggle.active { background: var(--ink); color: var(--paper);
+#live-toggle { right: 96px; }
+#labels-toggle { right: 156px; }
+#live-toggle:hover, #labels-toggle:hover { background: var(--ui-bg-soft); }
+#live-toggle.active, #labels-toggle.active { background: var(--ink); color: var(--paper);
   border-color: var(--ink); }
 #zoom-readout { bottom: 14px; right: 14px; font-family: monospace; font-size: 10px;
   height: 22px; display: flex; align-items: center; line-height: 1; }
@@ -377,9 +388,11 @@ input[type=file] { display: none; }
 </aside>
 <main id="main">
 <div id="canvas-container"></div>
+<div id="station-overlay"></div>
 <div id="hud"></div>
 <div id="flash"></div>
 <button id="live-toggle" title="open live preview">Live</button>
+<button id="labels-toggle" title="show station names in editor">labels</button>
 <div id="zoom-readout"></div>
 <div id="marquee"></div>
 <div id="ctxmenu"></div>
@@ -442,6 +455,9 @@ input[type=file] { display: none; }
     <option value="military">military</option>
     <option value="cabinet">cabinet</option>
   </select>
+  <button class="btn tiny" id="preview-zoom-out" title="zoom out">−</button>
+  <button class="btn tiny" id="preview-zoom-fit" title="fit">fit</button>
+  <button class="btn tiny" id="preview-zoom-in" title="zoom in">+</button>
   <button class="btn tiny" id="toggle-bw">B&amp;W</button><button class="btn tiny" id="close-preview">close</button>
 </span>
 </div>
@@ -2995,8 +3011,9 @@ function exportSvg(opts) {
       }
     }
   }
-  // station markers. precompute line geometry in screen space so we can
-  // score label-placement candidates against line clearance.
+  // station markers. precompute line geometry + ALL non-line obstacles
+  // (terminus pills, legend block, title block) so label placement scores
+  // against everything, not just lines and other labels.
   const allLineSegs = [];
   for (const ln of data.lines) {
     if (ln.waypoints.length < 2) continue;
@@ -3005,7 +3022,67 @@ function exportSvg(opts) {
       allLineSegs.push({ a: pts[pi], b: pts[pi + 1] });
     }
   }
-  const placedLabels = [];
+  // pre-compute terminus pill rects + a set of (gx,gy,plane) keys so a
+  // station coincident with a line's endpoint can suppress its name when
+  // the line's terminus pill already shows the same text.
+  const terminusObstacles = [];
+  const terminusByCoord = new Map(); // "gx,gy,plane" -> [lineName, ...]
+  for (let li = 0; li < data.lines.length; li++) {
+    const ln = data.lines[li];
+    if (ln.waypoints.length < 2) continue;
+    const pts = linePath(ln);
+    for (const endIdx of [0, pts.length - 1]) {
+      const tip = pts[endIdx];
+      const neighbor = pts[endIdx === 0 ? 1 : endIdx - 1];
+      const dx = tip[0] - neighbor[0], dy = tip[1] - neighbor[1];
+      const len = Math.hypot(dx, dy);
+      if (len < 0.001) continue;
+      const ux = dx / len, uy = dy / len;
+      const label = ln.name || '';
+      const tabW = Math.max(28, label.length * 6.5 + 14);
+      const tabH = 16, gap = 6;
+      const cx = tip[0] + ux * (tabW / 2 + gap);
+      const cy = tip[1] + uy * (tabH / 2 + gap);
+      // a little extra padding (3px) keeps station labels from touching the pill edge
+      terminusObstacles.push({ x: cx - tabW/2 - 3, y: cy - tabH/2 - 3, w: tabW + 6, h: tabH + 6 });
+      // index the original waypoint coord for the dedup check
+      const wp = ln.waypoints[endIdx === 0 ? 0 : ln.waypoints.length - 1];
+      const k = wp.gx + ',' + wp.gy + ',' + wp.plane;
+      const arr = terminusByCoord.get(k) || [];
+      arr.push((ln.name || '').toLowerCase());
+      terminusByCoord.set(k, arr);
+    }
+  }
+  // legend block rect (if shown) — mirrors the geometry in the legend pass.
+  const legendObstacles = [];
+  if (data.legend && data.legend.show && data.lines.length) {
+    const rowH = 18, padX = 12, padY = 10, swatchW = 36;
+    const rows = data.lines.filter(l => l.waypoints.length > 0);
+    const nameW = (s) => Math.min(s.length * 6.5 + 4, 160);
+    let maxLabelW = 0;
+    for (const ln of rows) maxLabelW = Math.max(maxLabelW, nameW(ln.name || ''));
+    const panelW = padX * 2 + swatchW + 8 + maxLabelW;
+    const panelH = padY * 2 + rows.length * rowH;
+    const corner = data.legend.corner || 'br';
+    const inset = 18;
+    let lx, ly;
+    if (corner === 'tl') { lx = minx + inset; ly = miny + inset; }
+    else if (corner === 'tr') { lx = maxx - inset - panelW; ly = miny + inset; }
+    else if (corner === 'bl') { lx = minx + inset; ly = maxy - inset - panelH; }
+    else                      { lx = maxx - inset - panelW; ly = maxy - inset - panelH; }
+    legendObstacles.push({ x: lx - 4, y: ly - 4, w: panelW + 8, h: panelH + 8 });
+  }
+  // title block rect (if title/subtitle present)
+  const titleObstacles = [];
+  if (data.title || data.subtitle) {
+    const tx = minx + 30, ty = miny + 50;
+    const titleW = Math.max((data.title || '').length, (data.subtitle || '').length) * 12;
+    const titleH = (data.title ? 30 : 0) + (data.subtitle ? 20 : 0);
+    titleObstacles.push({ x: tx - 4, y: ty - 30, w: titleW + 8, h: titleH + 8 });
+  }
+  // seed the placedLabels with non-label obstacles so the scorer naturally
+  // avoids them. labels get added on top as they're placed.
+  const placedLabels = [...terminusObstacles, ...legendObstacles, ...titleObstacles];
   const pointToSegmentDist = (px, py, ax, ay, bx, by) => {
     const dx = bx - ax, dy = by - ay;
     const len2 = dx * dx + dy * dy;
@@ -3344,13 +3421,21 @@ function exportSvg(opts) {
         if (kind === 'terminal') parts.push(inner(shape, x, y, r * 0.55, '#fff', count));
       }
       if (station && station.name) {
-        const lblColor = nocolor ? '#111' : '#1a1a1a';
-        const placed = placeLabel(station.name, x, y, r);
-        const safeName = station.name.replace(/&/g,'&amp;').replace(/</g,'&lt;');
-        parts.push('<text x="' + placed.x.toFixed(1) + '" y="' + placed.y.toFixed(1) +
-          '" font-size="11" fill="' + lblColor + '"' +
-          (placed.anchor !== 'start' ? ' text-anchor="' + placed.anchor + '"' : '') +
-          '>' + safeName + '</text>');
+        // suppress the station name when it would duplicate a terminus pill
+        // already drawn at the same coordinate with the same text.
+        const tkey = wp.gx + ',' + wp.gy + ',' + wp.plane;
+        const terminusNames = terminusByCoord.get(tkey);
+        const dupedByTerminus = terminusNames &&
+          terminusNames.includes((station.name || '').toLowerCase());
+        if (!dupedByTerminus) {
+          const lblColor = nocolor ? '#111' : '#1a1a1a';
+          const placed = placeLabel(station.name, x, y, r);
+          const safeName = station.name.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+          parts.push('<text x="' + placed.x.toFixed(1) + '" y="' + placed.y.toFixed(1) +
+            '" font-size="11" fill="' + lblColor + '"' +
+            (placed.anchor !== 'start' ? ' text-anchor="' + placed.anchor + '"' : '') +
+            '>' + safeName + '</text>');
+        }
       }
     }
   }
@@ -3616,21 +3701,45 @@ const toggleBwBtn = document.getElementById('toggle-bw');
 let previewOpen = false;
 let previewTimer = null;
 let lastPreviewState = '';
+// preview zoom state. previewZoom > 1 = zoomed in; null centers = use the
+// original viewBox center. zoom rewrites the SVG's viewBox attribute so it
+// stays vector-crisp at any zoom level (no css-scale pixellation).
+let previewZoom = 1.0;
+let previewCenterX = null, previewCenterY = null;
 function refreshPreview() {
   if (!previewOpen) return;
   const svg = exportSvg({ mode: bwMode });
   if (!svg) return;
   const themeBg = (THEMES[data.theme] && THEMES[data.theme].paper) || '#faf8f3';
   const bg = bwMode === 'color' ? themeBg : '#ffffff';
-  // strip the print-size width="1400" so the svg scales to the iframe width
-  // via its viewBox. that attribute stays on the actual export download.
-  const scaled = svg.replace(/(<svg[^>]*?)\s+width="1400"/, '$1');
+  let scaled = svg.replace(/(<svg[^>]*?)\s+width="1400"/, '$1');
+  // apply zoom by rewriting the viewBox around (previewCenterX, previewCenterY).
+  // when zoom is 1.0 we leave the viewBox alone — that's the "fit" state.
+  if (previewZoom !== 1.0) {
+    const vbMatch = scaled.match(/viewBox="([^"]+)"/);
+    if (vbMatch) {
+      const parts = vbMatch[1].split(/\s+/).map(parseFloat);
+      const [minx, miny, w, h] = parts;
+      const cx = previewCenterX != null ? previewCenterX : (minx + w/2);
+      const cy = previewCenterY != null ? previewCenterY : (miny + h/2);
+      const nw = w / previewZoom, nh = h / previewZoom;
+      const nx = cx - nw/2, ny = cy - nh/2;
+      const newVb = 'viewBox="' + nx.toFixed(1) + ' ' + ny.toFixed(1) + ' ' +
+        nw.toFixed(1) + ' ' + nh.toFixed(1) + '"';
+      scaled = scaled.replace(/viewBox="[^"]+"/, newVb);
+    }
+  }
   previewFrame.srcdoc =
     '<html><head><style>' +
       'html,body{margin:0;height:100%;background:' + bg + ';}' +
       'body{display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;}' +
       'svg{display:block;width:100%;height:auto;max-width:100%;max-height:100%;}' +
     '</style></head><body>' + scaled + '</body></html>';
+}
+function setPreviewZoom(z) {
+  previewZoom = Math.max(0.4, Math.min(8, z));
+  if (previewZoom === 1.0) { previewCenterX = null; previewCenterY = null; }
+  refreshPreview();
 }
 function schedulePreview() {
   if (previewTimer) clearTimeout(previewTimer);
@@ -3656,6 +3765,9 @@ function setPreviewOpen(open) {
 togglePreviewBtn.onclick = () => setPreviewOpen(!previewOpen);
 liveToggleBtn.onclick = () => setPreviewOpen(!previewOpen);
 closePreviewBtn.onclick = () => setPreviewOpen(false);
+document.getElementById('preview-zoom-in').onclick = () => setPreviewZoom(previewZoom * 1.4);
+document.getElementById('preview-zoom-out').onclick = () => setPreviewZoom(previewZoom / 1.4);
+document.getElementById('preview-zoom-fit').onclick = () => setPreviewZoom(1.0);
 setInterval(() => {
   if (!previewOpen) return;
   const cur = JSON.stringify(data);
@@ -3722,222 +3834,79 @@ function updateHud() {
   if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
 }
 
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  if (popoverState.open) positionPopover();
-  rebuildSelection();
-  updateHud();
-  renderer.render(scene, camera);
-}
-
-rebuildAll();
-applyResize();
-animate();
-</script>
-</body>
-</html>
-);
-}
-const ro = new ResizeObserver(applyResize);
-ro.observe(container);
-window.addEventListener('resize', applyResize);
-function watchDpr() {
-  const mq = window.matchMedia('(resolution: ' + window.devicePixelRatio + 'dppx)');
-  const onChange = () => { applyResize(); watchDpr(); };
-  mq.addEventListener('change', onChange, { once: true });
-}
-watchDpr();
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) applyResize();
-});
-window.addEventListener('focus', applyResize);
-let _lastSizeKey = '';
-setInterval(() => {
-  const key = container.clientWidth + 'x' + container.clientHeight + '@' + window.devicePixelRatio;
-  if (key !== _lastSizeKey) { _lastSizeKey = key; applyResize(); }
-}, 800);
-renderer.domElement.addEventListener('wheel', (ev) => {
-  ev.preventDefault();
-  const factor = ev.deltaY > 0 ? 0.9 : 1.111;
-  camera.zoom = Math.max(controls.minZoom, Math.min(controls.maxZoom, camera.zoom * factor));
-  camera.updateProjectionMatrix();
-}, { passive: false });
-
-function updateHud() {
-  let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
-    (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
-  const ln = data.lines.find(l => l.id === activeLineId);
-  if (ln) html += 'active <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
-  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
-  if (hoverTarget) {
-    if (hoverTarget.kind === 'waypoint') {
-      const hl = data.lines.find(l => l.id === hoverTarget.lineId);
-      if (hl) html += '<span style="color:var(--ink-mute)">over wp on </span><b style="color:' + hl.color + '">' + hl.name + '</b>';
-    } else if (hoverTarget.kind === 'line') {
-      const hl = data.lines.find(l => l.id === hoverTarget.lineId);
-      if (hl) html += '<span style="color:var(--ink-mute)">over line </span><b style="color:' + hl.color + '">' + hl.name + '</b>';
-    } else if (hoverTarget.kind === 'empty' && hoverCell) {
-      html += '<span style="color:var(--ink-mute)">cell ' + hoverCell.gx + ', ' + hoverCell.gy + '</span>';
+// in-editor station label overlay. toggled via the 'labels' button. each
+// frame, project each named station's worldPos to screen coords and pin
+// an html label there. cached by station key so we don't churn DOM.
+let showStationLabels = false;
+const labelCache = new Map();
+const stationOverlayEl = document.getElementById('station-overlay');
+const labelsToggleBtn = document.getElementById('labels-toggle');
+function updateStationOverlay() {
+  if (!stationOverlayEl) return;
+  if (!showStationLabels) {
+    stationOverlayEl.classList.remove('show');
+    if (labelCache.size) {
+      for (const [, el] of labelCache) el.remove();
+      labelCache.clear();
     }
-  } else if (hoverCell) {
-    html += '<span style="color:var(--ink-mute)">cell ' + hoverCell.gx + ', ' + hoverCell.gy + '</span>';
+    return;
   }
-  hud.innerHTML = html;
-  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
-}
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  if (popoverState.open) positionPopover();
-  rebuildSelection();
-  updateHud();
-  renderer.render(scene, camera);
-}
-
-rebuildAll();
-applyResize();
-animate();
-</script>
-</body>
-</html>
-nvas stuck at the previous
-  // monitor's dimensions after a cross-monitor drag.
-  renderer.setSize(w, h);
-}
-const ro = new ResizeObserver(applyResize);
-ro.observe(container);
-window.addEventListener('resize', applyResize);
-function watchDpr() {
-  const mq = window.matchMedia('(resolution: ' + window.devicePixelRatio + 'dppx)');
-  const onChange = () => { applyResize(); watchDpr(); };
-  mq.addEventListener('change', onChange, { once: true });
-}
-watchDpr();
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) applyResize();
-});
-window.addEventListener('focus', applyResize);
-let _lastSizeKey = '';
-setInterval(() => {
-  const key = container.clientWidth + 'x' + container.clientHeight + '@' + window.devicePixelRatio;
-  if (key !== _lastSizeKey) { _lastSizeKey = key; applyResize(); }
-}, 800);
-renderer.domElement.addEventListener('wheel', (ev) => {
-  ev.preventDefault();
-  const factor = ev.deltaY > 0 ? 0.9 : 1.111;
-  camera.zoom = Math.max(controls.minZoom, Math.min(controls.maxZoom, camera.zoom * factor));
-  camera.updateProjectionMatrix();
-}, { passive: false });
-
-function updateHud() {
-  let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
-    (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
-  const ln = data.lines.find(l => l.id === activeLineId);
-  if (ln) html += 'active <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
-  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
-  if (hoverTarget) {
-    if (hoverTarget.kind === 'waypoint') {
-      const hl = data.lines.find(l => l.id === hoverTarget.lineId);
-      if (hl) html += '<span style="color:var(--ink-mute)">over wp on </span><b style="color:' + hl.color + '">' + hl.name + '</b>';
-    } else if (hoverTarget.kind === 'line') {
-      const hl = data.lines.find(l => l.id === hoverTarget.lineId);
-      if (hl) html += '<span style="color:var(--ink-mute)">over line </span><b style="color:' + hl.color + '">' + hl.name + '</b>';
-    } else if (hoverTarget.kind === 'empty' && hoverCell) {
-      html += '<span style="color:var(--ink-mute)">cell ' + hoverCell.gx + ', ' + hoverCell.gy + '</span>';
+  stationOverlayEl.classList.add('show');
+  const rect = renderer.domElement.getBoundingClientRect();
+  const main = document.getElementById('main').getBoundingClientRect();
+  const offX = rect.left - main.left;
+  const offY = rect.top - main.top;
+  const seen = new Set();
+  for (const st of data.stations) {
+    if (!st.name) continue;
+    if (planeHidden(st.plane)) continue;
+    const key = st.gx + ',' + st.gy + ',' + st.plane;
+    const world = wpToWorld({ gx: st.gx, gy: st.gy, plane: st.plane });
+    const ndc = world.clone().project(camera);
+    // skip if behind camera or out of NDC range (off-screen)
+    if (ndc.z > 1 || ndc.z < -1) continue;
+    const sx = (ndc.x * 0.5 + 0.5) * rect.width;
+    const sy = (-ndc.y * 0.5 + 0.5) * rect.height;
+    let el = labelCache.get(key);
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'station-label';
+      el.textContent = st.name;
+      stationOverlayEl.appendChild(el);
+      labelCache.set(key, el);
+    } else if (el.textContent !== st.name) {
+      el.textContent = st.name;
     }
-  } else if (hoverCell) {
-    html += '<span style="color:var(--ink-mute)">cell ' + hoverCell.gx + ', ' + hoverCell.gy + '</span>';
+    el.style.transform = 'translate(' + (offX + sx + 10) + 'px, ' + (offY + sy - 18) + 'px)';
+    seen.add(key);
   }
-  hud.innerHTML = html;
-  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
+  for (const [key, el] of labelCache) {
+    if (!seen.has(key)) { el.remove(); labelCache.delete(key); }
+  }
 }
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  if (popoverState.open) positionPopover();
-  rebuildSelection();
-  updateHud();
-  renderer.render(scene, camera);
-}
-
-// seed the recent-colors row from the initial line set so it isn't empty.
-for (const ln of data.lines) noteRecentColor(ln.color);
-rebuildAll();
-applyResize();
-animate();
-</script>
-</body>
-</html>
- togglePreviewBtn = document.getElementById('toggle-preview');
-const closePreviewBtn = document.getElementById('close-preview');
-const toggleBwBtn = document.getElementById('toggle-bw');
-let previewOpen = false;
-let previewTimer = null;
-let lastPreviewState = '';
-function refreshPreview() {
-  if (!previewOpen) return;
-  const svg = exportSvg({ mode: bwMode });
-  if (!svg) return;
-  const themeBg = (THEMES[data.theme] && THEMES[data.theme].paper) || '#faf8f3';
-  const bg = bwMode === 'color' ? themeBg : '#ffffff';
-  const scaled = svg.replace(/(<svg[^>]*?)\s+width="1400"/, '$1');
-  previewFrame.srcdoc =
-    '<html><head><style>' +
-      'html,body{margin:0;height:100%;background:' + bg + ';}' +
-      'body{display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;}' +
-      'svg{display:block;width:100%;height:auto;max-width:100%;max-height:100%;}' +
-    '</style></head><body>' + scaled + '</body></html>';
-}
-function schedulePreview() {
-  if (previewTimer) clearTimeout(previewTimer);
-  previewTimer = setTimeout(refreshPreview, 200);
-}
-toggleBwBtn.onclick = () => {
-  bwMode = bwMode === 'color' ? 'mono' : bwMode === 'mono' ? 'grey' : 'color';
-  toggleBwBtn.textContent = bwMode === 'color' ? 'B&W' : bwMode === 'mono' ? 'grey' : 'color';
-  toggleBwBtn.classList.toggle('active', bwMode !== 'color');
-  refreshPreview();
+labelsToggleBtn.onclick = () => {
+  showStationLabels = !showStationLabels;
+  labelsToggleBtn.classList.toggle('active', showStationLabels);
+  updateStationOverlay();
 };
-const liveToggleBtn = document.getElementById('live-toggle');
-function setPreviewOpen(open) {
-  previewOpen = open;
-  previewPane.classList.toggle('open', open);
-  togglePreviewBtn.classList.toggle('active', open);
-  liveToggleBtn.classList.toggle('active', open);
-  if (open) refreshPreview();
-}
-togglePreviewBtn.onclick = () => setPreviewOpen(!previewOpen);
-liveToggleBtn.onclick = () => setPreviewOpen(!previewOpen);
-closePreviewBtn.onclick = () => setPreviewOpen(false);
-setInterval(() => {
-  if (!previewOpen) return;
-  const cur = JSON.stringify(data);
-  if (cur !== lastPreviewState) { schedulePreview(); lastPreviewState = cur; }
-}, 250);
 
-function applyResize() {
-  const w = container.clientWidth, h = container.clientHeight;
-  if (w < 1 || h < 1) return;
-  const a = w / h;
-  camera.left = -FRUSTUM*a/2; camera.right = FRUSTUM*a/2;
-  camera.top = FRUSTUM/2; camera.bottom = -FRUSTUM/2;
-  camera.updateProjectionMatrix();
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(w, h);
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (popoverState.open) positionPopover();
+  rebuildSelection();
+  updateHud();
+  if (showStationLabels) updateStationOverlay();
+  renderer.render(scene, camera);
 }
-const ro = new ResizeObserver(applyResize);
-ro.observe(container);
-window.addEventListener('resize', applyResize);
-function watchDpr() {
-  const mq = window.matchMedia('(resolution: ' + window.devicePixelRatio + 'dppx)');
-  const onChange = () => { applyResize(); watchDpr(); };
-  mq.addEventListener('change', onChange, { once: true });
-}
-watchDpr();
-document.addEventListener('visibilitychange', () => {
+
+rebuildAll();
+applyResize();
+animate();
+</script>
+</body>
+</html>
+, () => {
   if (!document.hidden) applyResize();
 });
 window.addEventListener('focus', applyResize);
@@ -3976,33 +3945,65 @@ function updateHud() {
   if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
 }
 
+let showStationLabels = false;
+const labelCache = new Map();
+const stationOverlayEl = document.getElementById('station-overlay');
+const labelsToggleBtn = document.getElementById('labels-toggle');
+function updateStationOverlay() {
+  if (!stationOverlayEl) return;
+  if (!showStationLabels) {
+    stationOverlayEl.classList.remove('show');
+    if (labelCache.size) {
+      for (const [, el] of labelCache) el.remove();
+      labelCache.clear();
+    }
+    return;
+  }
+  stationOverlayEl.classList.add('show');
+  const rect = renderer.domElement.getBoundingClientRect();
+  const main = document.getElementById('main').getBoundingClientRect();
+  const offX = rect.left - main.left;
+  const offY = rect.top - main.top;
+  const seen = new Set();
+  for (const st of data.stations) {
+    if (!st.name) continue;
+    if (planeHidden(st.plane)) continue;
+    const key = st.gx + ',' + st.gy + ',' + st.plane;
+    const world = wpToWorld({ gx: st.gx, gy: st.gy, plane: st.plane });
+    const ndc = world.clone().project(camera);
+    if (ndc.z > 1 || ndc.z < -1) continue;
+    const sx = (ndc.x * 0.5 + 0.5) * rect.width;
+    const sy = (-ndc.y * 0.5 + 0.5) * rect.height;
+    let el = labelCache.get(key);
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'station-label';
+      el.textContent = st.name;
+      stationOverlayEl.appendChild(el);
+      labelCache.set(key, el);
+    } else if (el.textContent !== st.name) {
+      el.textContent = st.name;
+    }
+    el.style.transform = 'translate(' + (offX + sx + 10) + 'px, ' + (offY + sy - 18) + 'px)';
+    seen.add(key);
+  }
+  for (const [key, el] of labelCache) {
+    if (!seen.has(key)) { el.remove(); labelCache.delete(key); }
+  }
+}
+labelsToggleBtn.onclick = () => {
+  showStationLabels = !showStationLabels;
+  labelsToggleBtn.classList.toggle('active', showStationLabels);
+  updateStationOverlay();
+};
+
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
   if (popoverState.open) positionPopover();
   rebuildSelection();
   updateHud();
-  renderer.render(scene, camera);
-}
-
-for (const ln of data.lines) noteRecentColor(ln.color);
-rebuildAll();
-applyResize();
-animate();
-</script>
-</body>
-</html>
-ell) html += 'cell ' + hoverCell.gx + ', ' + hoverCell.gy;
-  hud.innerHTML = html;
-  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
-}
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  if (popoverState.open) positionPopover();
-  rebuildSelection();
-  updateHud();
+  if (showStationLabels) updateStationOverlay();
   renderer.render(scene, camera);
 }
 
