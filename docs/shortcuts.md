@@ -35,6 +35,13 @@ muscle-memory back-compat.
 | right-click empty | deselect everything (no menu) |
 | delete / backspace | delete selected waypoints |
 
+## draw mode modifiers
+
+| input | action |
+|---|---|
+| `shift`+click | drop new waypoint without octolinear snap (raw cell) |
+| `ctrl`/`cmd`+click | drop on whichever plane the cursor ray hits (also switches activePlane to that one) |
+
 ## planes
 
 | key | action |

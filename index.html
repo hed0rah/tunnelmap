@@ -492,6 +492,12 @@ input[type=file] { display: none; }
         <tr><td>right-click empty</td><td>deselect everything</td></tr>
       </table>
 
+      <h3>draw mode modifiers</h3>
+      <table class="kb-table">
+        <tr><td><span class="kb">shift</span>+click</td><td>skip octolinear snap (raw cell)</td></tr>
+        <tr><td><span class="kb">ctrl</span>/<span class="kb">cmd</span>+click</td><td>drop on whatever plane the cursor is over (auto-switches activePlane)</td></tr>
+      </table>
+
       <h3>planes</h3>
       <table class="kb-table">
         <tr><td><span class="kb">1</span>…<span class="kb">6</span></td><td>jump to plane index</td></tr>
@@ -1588,6 +1594,12 @@ renderer.domElement.addEventListener('mousedown', (ev) => {
 
   // draw mode: clicking empty extends the active line; clicking a waypoint
   // arms a drag (so user can also nudge waypoints while drawing).
+  // modifiers:
+  //   shift = skip octolinear snap (raw cell coords)
+  //   ctrl / cmd = drop on whichever plane the cursor ray hits, not the
+  //     active plane. lets the user rake into a higher plane mid-draw
+  //     without pressing 1-6 first. also auto-switches activePlane so
+  //     subsequent clicks land there too.
   if (mode === 'draw') {
     if (wp) {
       dragPress = { wp, x: ev.clientX, y: ev.clientY, dragged: false };
@@ -1595,7 +1607,8 @@ renderer.domElement.addEventListener('mousedown', (ev) => {
       ev.preventDefault();
       return;
     }
-    const cell = pickPlaneCell();
+    const crossPlane = ev.ctrlKey || ev.metaKey;
+    const cell = crossPlane ? pickAnyPlaneCell() : pickPlaneCell();
     if (!cell) return;
     const ln = data.lines.find(l => l.id === activeLineId);
     if (!ln) return;
@@ -1603,6 +1616,9 @@ renderer.domElement.addEventListener('mousedown', (ev) => {
     const lastWp = [...ln.waypoints].reverse().find(w => w.plane === cell.plane);
     if (lastWp && !ev.shiftKey) target = octolinearSnap(lastWp, cell);
     ln.waypoints.push(target);
+    // when crossing planes, slide activePlane to follow so the user keeps
+    // drawing on the plane they jumped to.
+    if (crossPlane && cell.plane !== activePlane) activePlane = cell.plane;
     rebuildAll(); ev.preventDefault();
     return;
   }
@@ -3988,6 +4004,33 @@ function updateStationOverlay() {
     seen.add(key);
   }
   for (const [key, el] of labelCache) {
+    if (!seen.has(key)) { el.remove(); labelCache.delete(key); }
+  }
+}
+labelsToggleBtn.onclick = () => {
+  showStationLabels = !showStationLabels;
+  labelsToggleBtn.classList.toggle('active', showStationLabels);
+  updateStationOverlay();
+};
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (popoverState.open) positionPopover();
+  rebuildSelection();
+  updateHud();
+  if (showStationLabels) updateStationOverlay();
+  renderer.render(scene, camera);
+}
+
+for (const ln of data.lines) noteRecentColor(ln.color);
+rebuildAll();
+applyResize();
+animate();
+</script>
+</body>
+</html>
+, el] of labelCache) {
     if (!seen.has(key)) { el.remove(); labelCache.delete(key); }
   }
 }
