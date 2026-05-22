@@ -41,6 +41,7 @@ muscle-memory back-compat.
 |---|---|
 | `shift`+click | drop new waypoint without octolinear snap (raw cell) |
 | `ctrl`/`cmd`+click | drop on whichever plane the cursor ray hits (also switches activePlane to that one) |
+| double-click waypoint | activate the line that owns this waypoint and orient it so subsequent clicks extend from this point. flips the line array if the clicked wp was at index 0. never creates a new line; use the right-click "start new line from here" / "branch from here" for explicit branching |
 
 ## planes
 
