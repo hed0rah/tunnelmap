@@ -165,6 +165,42 @@
   --danger: #ff9090;
   --kb-bg: #f0f8ff;
 }
+:root[data-theme="min"] {
+  /* high-contrast minimal, VSCode-light vibe. pure white paper,
+     near-black ink, very faint plane tints so dotted/dashed strokes
+     stay legible. for print and accessibility. */
+  --paper: #ffffff;
+  --ui-bg: #f4f4f4;
+  --ui-bg-soft: #e8e8e8;
+  --ui-border: #c0c0c0;
+  --ui-divider: #e0e0e0;
+  --ink: #0a0a0a;
+  --ink-soft: #404040;
+  --ink-mute: #707070;
+  --field-bg: #ffffff;
+  --field-bg-active: #0a0a0a;
+  --field-border-active: #404040;
+  --danger: #c91414;
+  --kb-bg: #0a0a0a;
+}
+:root[data-theme="hicon"] {
+  /* high-contrast print: pure-white paper, pure black ink,
+     ultra-light cool plane tints. designed to make even thin/dotted
+     tubes pop on cheap photocopier zine prints. */
+  --paper: #fdfdfd;
+  --ui-bg: #efefef;
+  --ui-bg-soft: #e3e3e3;
+  --ui-border: #888888;
+  --ui-divider: #d8d8d8;
+  --ink: #000000;
+  --ink-soft: #2a2a2a;
+  --ink-mute: #5a5a5a;
+  --field-bg: #ffffff;
+  --field-bg-active: #000000;
+  --field-border-active: #2a2a2a;
+  --danger: #a00000;
+  --kb-bg: #000000;
+}
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; font-family: Inter, Helvetica, Arial, sans-serif;
   background: var(--paper); color: var(--ink); overflow: hidden; }
@@ -194,7 +230,9 @@ html, body { height: 100%; font-family: Inter, Helvetica, Arial, sans-serif;
   display: none; overflow: hidden; }
 #station-overlay.show { display: block; }
 .station-label { position: absolute; top: 0; left: 0;
-  background: rgba(255,255,255,0.88); color: var(--ink);
+  /* theme-aware bg: 85% paper, 15% transparent. evergreen browser support. */
+  background: color-mix(in srgb, var(--paper) 85%, transparent);
+  color: var(--ink);
   padding: 1px 5px; border-radius: 3px; font-size: 10px; font-weight: 500;
   border: 1px solid var(--ui-border); white-space: nowrap;
   font-family: 'Space Grotesk', Inter, sans-serif; line-height: 1.4;
@@ -330,6 +368,8 @@ input[type=file] { display: none; }
 <div><h2>theme</h2>
 <select id="theme-picker" style="width:100%;font-family:inherit;font-size:11px;padding:4px 6px;border:1px solid var(--ui-border);border-radius:3px;background:var(--field-bg);color:var(--ink)">
   <option value="cool">cool grey (default)</option>
+  <option value="min">min (VSCode light)</option>
+  <option value="hicon">high contrast</option>
   <option value="paper">paper</option>
   <option value="bone">bone</option>
   <option value="beige">beige</option>
@@ -496,6 +536,7 @@ input[type=file] { display: none; }
       <table class="kb-table">
         <tr><td><span class="kb">shift</span>+click</td><td>skip octolinear snap (raw cell)</td></tr>
         <tr><td><span class="kb">ctrl</span>/<span class="kb">cmd</span>+click</td><td>drop on whatever plane the cursor is over (auto-switches activePlane)</td></tr>
+        <tr><td>dbl-click waypoint</td><td>activate that line, extend from this point (flips line if needed)</td></tr>
       </table>
 
       <h3>planes</h3>
@@ -1503,15 +1544,20 @@ renderer.domElement.addEventListener('dblclick', (ev) => {
     // pull active plane to this wp's plane so subsequent clicks register.
     activePlane = w.plane;
     if (mode === 'draw') {
-      // in draw mode, double-click on a wp branches a new line from there
-      // (matches the user's mental model: "draw a line starting at this node").
-      const id = 'l' + Date.now().toString(36);
-      const used = new Set(data.lines.map(l => l.color));
-      const color = palette.find(c => !used.has(c)) || palette[data.lines.length % palette.length];
-      data.lines.push({ id, name: 'NEW', color, style: ln.style || 'solid',
-        waypoints: [{ gx: w.gx, gy: w.gy, plane: w.plane }] });
-      activeLineId = id;
-      selectedWaypoints = [];
+      // in draw mode, double-click on a wp activates the line that owns
+      // that waypoint and orients it so subsequent clicks extend from
+      // this point. never creates a new line; for that, use the
+      // right-click "start new line from here" or "branch from here"
+      // explicit actions.
+      activeLineId = ln.id;
+      // if the clicked wp is the first in the line, reverse so the
+      // append-to-end extension logic naturally continues from here.
+      // for interior or last wp, no flip needed; extension will go
+      // from the real end of the line.
+      if (wp.wpIndex === 0 && ln.waypoints.length > 1) {
+        ln.waypoints.reverse();
+      }
+      selectedWaypoints = [{ lineId: ln.id, wpIndex: ln.waypoints.length - 1 }];
       rebuildAll(); rebuildSelection();
       return;
     }
@@ -2003,6 +2049,20 @@ const THEMES = {
     paper: '#2d5c8c',
     planeTints: ['#4e86d2', '#4980c8', '#447abe', '#3f74b4', '#3a6eaa', '#3568a0'],
     inkDark: '#f0f8ff', inkSoft: '#a8d0f0', planeStroke: '#9cc8ec',
+  },
+  min: {
+    /* VSCode-light style. faint cool greys, near-black ink. clean
+       enough that thin/dotted tubes stay readable. */
+    paper: '#ffffff',
+    planeTints: ['#dcdcdc', '#e2e2e2', '#e8e8e8', '#eeeeee', '#f3f3f3', '#f8f8f8'],
+    inkDark: '#0a0a0a', inkSoft: '#404040', planeStroke: '#b8b8b8',
+  },
+  hicon: {
+    /* high-contrast: pure black ink, ultra-light planes, strong
+       border. zine photocopier friendly. */
+    paper: '#fdfdfd',
+    planeTints: ['#d6d6d6', '#dddddd', '#e3e3e3', '#eaeaea', '#f0f0f0', '#f6f6f6'],
+    inkDark: '#000000', inkSoft: '#2a2a2a', planeStroke: '#888888',
   },
 };
 function applyTheme(name) {
@@ -2805,6 +2865,11 @@ function exportSvg(opts) {
   const theme = (typeof THEMES !== 'undefined' && data.theme && THEMES[data.theme]) ? THEMES[data.theme] : null;
   const themePaper = theme ? theme.paper : '#faf8f3';
   const paper = nocolor ? '#ffffff' : themePaper;
+  // theme-aware ink: themes with dark paper define a light inkDark so
+  // station-name labels and title text remain legible on the export.
+  // nocolor modes always render onto white paper so they stay dark.
+  const themeInk = theme ? theme.inkDark : '#1a1a1a';
+  const themeInkSoft = theme ? theme.inkSoft : '#6e5d36';
   const lineStroke = bw ? '#111111' : null;
   const liftStroke = nocolor ? '#444444' : '#3a3a3a';
   const planeStroke = nocolor ? '#cccccc' : '#cdbf9c';
@@ -3444,7 +3509,7 @@ function exportSvg(opts) {
         const dupedByTerminus = terminusNames &&
           terminusNames.includes((station.name || '').toLowerCase());
         if (!dupedByTerminus) {
-          const lblColor = nocolor ? '#111' : '#1a1a1a';
+          const lblColor = nocolor ? '#111' : themeInk;
           const placed = placeLabel(station.name, x, y, r);
           const safeName = station.name.replace(/&/g,'&amp;').replace(/</g,'&lt;');
           parts.push('<text x="' + placed.x.toFixed(1) + '" y="' + placed.y.toFixed(1) +
@@ -3493,8 +3558,8 @@ function exportSvg(opts) {
   // match a print-zine header. opt-in via data.title and data.subtitle.
   if (data.title || data.subtitle) {
     const tx = minx + 30, ty = miny + 50;
-    const titleColor = nocolor ? '#111111' : '#1a1a1a';
-    const subColor = nocolor ? '#555555' : '#6e5d36';
+    const titleColor = nocolor ? '#111111' : themeInk;
+    const subColor = nocolor ? '#555555' : themeInkSoft;
     if (data.title) {
       parts.push('<text x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) +
         '" font-size="28" font-weight="700" fill="' + titleColor +
@@ -3897,140 +3962,6 @@ function updateStationOverlay() {
     seen.add(key);
   }
   for (const [key, el] of labelCache) {
-    if (!seen.has(key)) { el.remove(); labelCache.delete(key); }
-  }
-}
-labelsToggleBtn.onclick = () => {
-  showStationLabels = !showStationLabels;
-  labelsToggleBtn.classList.toggle('active', showStationLabels);
-  updateStationOverlay();
-};
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  if (popoverState.open) positionPopover();
-  rebuildSelection();
-  updateHud();
-  if (showStationLabels) updateStationOverlay();
-  renderer.render(scene, camera);
-}
-
-rebuildAll();
-applyResize();
-animate();
-</script>
-</body>
-</html>
-, () => {
-  if (!document.hidden) applyResize();
-});
-window.addEventListener('focus', applyResize);
-let _lastSizeKey = '';
-setInterval(() => {
-  const key = container.clientWidth + 'x' + container.clientHeight + '@' + window.devicePixelRatio;
-  if (key !== _lastSizeKey) { _lastSizeKey = key; applyResize(); }
-}, 800);
-renderer.domElement.addEventListener('wheel', (ev) => {
-  ev.preventDefault();
-  const factor = ev.deltaY > 0 ? 0.9 : 1.111;
-  camera.zoom = Math.max(controls.minZoom, Math.min(controls.maxZoom, camera.zoom * factor));
-  camera.updateProjectionMatrix();
-}, { passive: false });
-
-function updateHud() {
-  let html = 'mode <b>' + mode + '</b> &middot; plane <b>' +
-    (data.planes[activePlane] ? data.planes[activePlane].name : '?') + '</b><br>';
-  const ln = data.lines.find(l => l.id === activeLineId);
-  if (ln) html += 'active <b style="color:' + ln.color + '">' + ln.name + '</b> &middot; ' + ln.waypoints.length + ' wps<br>';
-  if (mode === 'lift' && liftPending) html += 'lift: pick second station<br>';
-  if (hoverTarget) {
-    if (hoverTarget.kind === 'waypoint') {
-      const hl = data.lines.find(l => l.id === hoverTarget.lineId);
-      if (hl) html += '<span style="color:var(--ink-mute)">over wp on </span><b style="color:' + hl.color + '">' + hl.name + '</b>';
-    } else if (hoverTarget.kind === 'line') {
-      const hl = data.lines.find(l => l.id === hoverTarget.lineId);
-      if (hl) html += '<span style="color:var(--ink-mute)">over line </span><b style="color:' + hl.color + '">' + hl.name + '</b>';
-    } else if (hoverTarget.kind === 'empty' && hoverCell) {
-      html += '<span style="color:var(--ink-mute)">cell ' + hoverCell.gx + ', ' + hoverCell.gy + '</span>';
-    }
-  } else if (hoverCell) {
-    html += '<span style="color:var(--ink-mute)">cell ' + hoverCell.gx + ', ' + hoverCell.gy + '</span>';
-  }
-  hud.innerHTML = html;
-  if (zoomReadout) zoomReadout.textContent = 'zoom ' + camera.zoom.toFixed(2) + 'x';
-}
-
-let showStationLabels = false;
-const labelCache = new Map();
-const stationOverlayEl = document.getElementById('station-overlay');
-const labelsToggleBtn = document.getElementById('labels-toggle');
-function updateStationOverlay() {
-  if (!stationOverlayEl) return;
-  if (!showStationLabels) {
-    stationOverlayEl.classList.remove('show');
-    if (labelCache.size) {
-      for (const [, el] of labelCache) el.remove();
-      labelCache.clear();
-    }
-    return;
-  }
-  stationOverlayEl.classList.add('show');
-  const rect = renderer.domElement.getBoundingClientRect();
-  const main = document.getElementById('main').getBoundingClientRect();
-  const offX = rect.left - main.left;
-  const offY = rect.top - main.top;
-  const seen = new Set();
-  for (const st of data.stations) {
-    if (!st.name) continue;
-    if (planeHidden(st.plane)) continue;
-    const key = st.gx + ',' + st.gy + ',' + st.plane;
-    const world = wpToWorld({ gx: st.gx, gy: st.gy, plane: st.plane });
-    const ndc = world.clone().project(camera);
-    if (ndc.z > 1 || ndc.z < -1) continue;
-    const sx = (ndc.x * 0.5 + 0.5) * rect.width;
-    const sy = (-ndc.y * 0.5 + 0.5) * rect.height;
-    let el = labelCache.get(key);
-    if (!el) {
-      el = document.createElement('div');
-      el.className = 'station-label';
-      el.textContent = st.name;
-      stationOverlayEl.appendChild(el);
-      labelCache.set(key, el);
-    } else if (el.textContent !== st.name) {
-      el.textContent = st.name;
-    }
-    el.style.transform = 'translate(' + (offX + sx + 10) + 'px, ' + (offY + sy - 18) + 'px)';
-    seen.add(key);
-  }
-  for (const [key, el] of labelCache) {
-    if (!seen.has(key)) { el.remove(); labelCache.delete(key); }
-  }
-}
-labelsToggleBtn.onclick = () => {
-  showStationLabels = !showStationLabels;
-  labelsToggleBtn.classList.toggle('active', showStationLabels);
-  updateStationOverlay();
-};
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  if (popoverState.open) positionPopover();
-  rebuildSelection();
-  updateHud();
-  if (showStationLabels) updateStationOverlay();
-  renderer.render(scene, camera);
-}
-
-for (const ln of data.lines) noteRecentColor(ln.color);
-rebuildAll();
-applyResize();
-animate();
-</script>
-</body>
-</html>
-, el] of labelCache) {
     if (!seen.has(key)) { el.remove(); labelCache.delete(key); }
   }
 }
