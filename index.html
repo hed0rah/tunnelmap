@@ -394,6 +394,28 @@ input[type=file] { display: none; }
   <option value="cabinet">cabinet (half depth)</option>
 </select>
 </div>
+<div><h2>reference image</h2>
+<div style="font-size:10px;color:var(--ink-mute);margin-bottom:4px">overlay for eyeball-tracing. not exported, not saved.</div>
+<div class="row" style="gap:3px">
+  <label class="btn tiny" for="refimg-input" style="flex:1;text-align:center">load image</label>
+  <button class="btn tiny" id="refimg-clear" style="flex:0 0 auto">clear</button>
+</div>
+<input type="file" id="refimg-input" accept="image/*">
+<div class="row" style="gap:3px;margin-top:4px">
+  <button class="btn tiny" id="refimg-visible" style="flex:1;text-align:center">visible</button>
+  <button class="btn tiny" id="refimg-active" style="flex:1;text-align:center" title="arrow keys nudge image when active">nudge mode</button>
+</div>
+<label style="font-size:10px;color:var(--ink-mute);display:block;margin-top:6px">opacity <span id="refimg-opacity-r" style="font-family:monospace"></span></label>
+<input type="range" id="refimg-opacity" min="0.05" max="1" step="0.05" value="0.6" style="width:100%">
+<label style="font-size:10px;color:var(--ink-mute);display:block;margin-top:4px">scale <span id="refimg-scale-r" style="font-family:monospace"></span></label>
+<input type="range" id="refimg-scale" min="2" max="80" step="0.5" value="18" style="width:100%">
+<label style="font-size:10px;color:var(--ink-mute);display:block;margin-top:4px">rotation <span id="refimg-rot-r" style="font-family:monospace"></span></label>
+<input type="range" id="refimg-rot" min="-180" max="180" step="1" value="0" style="width:100%">
+<div style="font-size:10px;color:var(--ink-mute);margin-top:4px">pos
+  <span id="refimg-pos-r" style="font-family:monospace">0, 0</span>
+  <button class="btn tiny" id="refimg-recenter" style="float:right;padding:0 6px">recenter</button>
+</div>
+</div>
 <div><h2>legend</h2>
 <label style="font-size:11px;display:block;color:#444"><input type="checkbox" id="legend-show" style="vertical-align:middle"> show legend</label>
 <label style="font-size:11px;display:block;color:#444;margin-top:3px">corner
@@ -705,6 +727,21 @@ let selectedWaypoints = [];
 //   grey:  greyscale lines + svg hatch/stipple patterns for differentiation
 let bwMode = 'color';
 
+// reference image: a textured ground plane shown BELOW plane 0, used for
+// eyeball-tracing real-world maps. lives outside `data` on purpose — it's
+// a per-session aid, not part of the saved map. excluded from svg export
+// and json save automatically because nothing reads it from `data`.
+const refImage = {
+  texture: null,    // THREE.Texture once loaded
+  visible: true,
+  active: false,    // when true, arrow keys nudge the image instead of selection
+  opacity: 0.6,
+  scale: 18,        // height in grid units; width derived from aspect
+  offsetX: 0,
+  offsetY: 0,
+  rotation: 0,      // radians, around world Y
+};
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xfaf8f3);
 const container = document.getElementById('canvas-container');
@@ -756,8 +793,43 @@ const liftsGroup = new THREE.Group();
 const editGroup = new THREE.Group();
 const selectionGroup = new THREE.Group();
 const guidesGroup = new THREE.Group();
-scene.add(planeGroup, linesGroup, stationsGroup, liftsGroup, editGroup, selectionGroup, guidesGroup);
+const refImageGroup = new THREE.Group();
+scene.add(refImageGroup, planeGroup, linesGroup, stationsGroup, liftsGroup, editGroup, selectionGroup, guidesGroup);
 function clearGroup(g) { while (g.children.length) g.remove(g.children[0]); }
+
+// rebuild the reference-image plane from refImage state. cheap; called on
+// any control change. mesh sits at y=-0.1 so it reads through plane 0's
+// translucent fill without z-fighting. disposes the prior geometry+material
+// every call — slider drags fire this dozens of times per second and would
+// otherwise leak GPU resources.
+function disposeRefImageGroup() {
+  refImageGroup.traverse((o) => {
+    if (o.isMesh) {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) o.material.dispose();
+    }
+  });
+  clearGroup(refImageGroup);
+}
+function rebuildRefImage() {
+  disposeRefImageGroup();
+  if (!refImage.texture || !refImage.visible) return;
+  const img = refImage.texture.image;
+  const ar = (img && img.width && img.height) ? (img.width / img.height) : 1;
+  const h = refImage.scale, w = h * ar;
+  const mat = new THREE.MeshBasicMaterial({
+    map: refImage.texture, transparent: true, opacity: refImage.opacity,
+    side: THREE.DoubleSide, depthWrite: false,
+  });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+  mesh.rotation.x = -Math.PI / 2;
+  // wrap so we can rotate around world Y without fighting the X-flatten.
+  const wrap = new THREE.Group();
+  wrap.add(mesh);
+  wrap.rotation.y = refImage.rotation;
+  wrap.position.set(refImage.offsetX, -0.1, refImage.offsetY);
+  refImageGroup.add(wrap);
+}
 
 function buildPlanes() {
   clearGroup(planeGroup); planeMeshes.length = 0;
@@ -1647,7 +1719,18 @@ renderer.domElement.addEventListener('mousedown', (ev) => {
   //     without pressing 1-6 first. also auto-switches activePlane so
   //     subsequent clicks land there too.
   if (mode === 'draw') {
+    // only arm a drag if the picked wp is ON the active plane. otherwise
+    // the user has switched planes and is clicking through to draw at the
+    // same x,y on the new plane; the ray happens to pass over the old wp
+    // sphere first. falling through to plane cell pick lets vertical
+    // stack drawing (4,3,p0) to (4,3,p1) work without nudging sideways.
+    let wpPlane = -1;
     if (wp) {
+      const wln = data.lines.find(l => l.id === wp.lineId);
+      const ww = wln && wln.waypoints[wp.wpIndex];
+      if (ww) wpPlane = ww.plane;
+    }
+    if (wp && wpPlane === activePlane) {
       dragPress = { wp, x: ev.clientX, y: ev.clientY, dragged: false };
       controls.enabled = false;
       ev.preventDefault();
@@ -2210,6 +2293,19 @@ window.addEventListener('keydown', (ev) => {
     }
     selectedWaypoints = [];
     rebuildAll(); rebuildSelection();
+  }
+  // when refImage nudge-mode is on, arrows move the reference image instead
+  // of any selected waypoints. preempts the waypoint-nudge branch below.
+  if (refImage.active && refImage.texture && (ev.key === 'ArrowLeft' ||
+      ev.key === 'ArrowRight' || ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) {
+    ev.preventDefault();
+    const step = ev.shiftKey ? 1 : 0.25;
+    if (ev.key === 'ArrowLeft')  refImage.offsetX -= step;
+    if (ev.key === 'ArrowRight') refImage.offsetX += step;
+    if (ev.key === 'ArrowUp')    refImage.offsetY -= step;
+    if (ev.key === 'ArrowDown')  refImage.offsetY += step;
+    refImgUpdateUi(); rebuildRefImage();
+    return;
   }
   // arrow keys nudge the selected waypoint(s). shift = 5-unit jump. axes
   // are in grid space; left/right move gx, up/down move gy. gy is "north"
@@ -3772,6 +3868,77 @@ document.getElementById('load-input').addEventListener('change', (ev) => {
   };
   r.readAsText(f);
 });
+
+// reference image controls. all session-only; nothing persisted.
+const refImgInput      = document.getElementById('refimg-input');
+const refImgClearBtn   = document.getElementById('refimg-clear');
+const refImgVisibleBtn = document.getElementById('refimg-visible');
+const refImgActiveBtn  = document.getElementById('refimg-active');
+const refImgOpacity    = document.getElementById('refimg-opacity');
+const refImgScale      = document.getElementById('refimg-scale');
+const refImgRot        = document.getElementById('refimg-rot');
+const refImgRecenter   = document.getElementById('refimg-recenter');
+const refImgOpacityR   = document.getElementById('refimg-opacity-r');
+const refImgScaleR     = document.getElementById('refimg-scale-r');
+const refImgRotR       = document.getElementById('refimg-rot-r');
+const refImgPosR       = document.getElementById('refimg-pos-r');
+
+function refImgUpdateUi() {
+  refImgVisibleBtn.classList.toggle('active', refImage.visible);
+  refImgActiveBtn.classList.toggle('active', refImage.active);
+  refImgOpacityR.textContent = refImage.opacity.toFixed(2);
+  refImgScaleR.textContent = refImage.scale.toFixed(1);
+  refImgRotR.textContent = (refImage.rotation * 180 / Math.PI).toFixed(0) + '°';
+  refImgPosR.textContent = refImage.offsetX.toFixed(1) + ', ' + refImage.offsetY.toFixed(1);
+  refImgOpacity.value = refImage.opacity;
+  refImgScale.value = refImage.scale;
+  refImgRot.value = (refImage.rotation * 180 / Math.PI);
+}
+
+refImgInput.addEventListener('change', (ev) => {
+  const f = ev.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const tex = new THREE.TextureLoader().load(r.result, () => {
+      // re-render once the texture has dimensions, so PlaneGeometry uses
+      // the real aspect ratio instead of falling back to 1:1.
+      rebuildRefImage();
+    });
+    tex.colorSpace = THREE.SRGBColorSpace;
+    // dispose any previously-loaded texture so re-loading doesn't leak.
+    if (refImage.texture) refImage.texture.dispose();
+    refImage.texture = tex;
+    refImage.visible = true;
+    refImgUpdateUi();
+    rebuildRefImage();
+  };
+  r.readAsDataURL(f);
+  // reset so the same file can be reloaded
+  ev.target.value = '';
+});
+refImgClearBtn.onclick = () => {
+  if (refImage.texture) refImage.texture.dispose();
+  refImage.texture = null;
+  refImage.active = false;
+  refImage.offsetX = 0; refImage.offsetY = 0; refImage.rotation = 0;
+  refImgUpdateUi(); rebuildRefImage();
+};
+refImgVisibleBtn.onclick = () => {
+  refImage.visible = !refImage.visible;
+  refImgUpdateUi(); rebuildRefImage();
+};
+refImgActiveBtn.onclick = () => {
+  refImage.active = !refImage.active;
+  refImgUpdateUi();
+};
+refImgOpacity.oninput = () => { refImage.opacity = parseFloat(refImgOpacity.value); refImgUpdateUi(); rebuildRefImage(); };
+refImgScale.oninput   = () => { refImage.scale   = parseFloat(refImgScale.value);   refImgUpdateUi(); rebuildRefImage(); };
+refImgRot.oninput     = () => { refImage.rotation = parseFloat(refImgRot.value) * Math.PI / 180; refImgUpdateUi(); rebuildRefImage(); };
+refImgRecenter.onclick = () => {
+  refImage.offsetX = 0; refImage.offsetY = 0;
+  refImgUpdateUi(); rebuildRefImage();
+};
+refImgUpdateUi();
 
 // live preview pane
 const previewPane = document.getElementById('preview-pane');
