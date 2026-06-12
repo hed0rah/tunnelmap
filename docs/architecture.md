@@ -123,10 +123,14 @@ overhead is trivial for editor-scale data.
 ## save / load
 
 `save json` button stuffs the current state (plus camera) into a blob
-download. `load json` reads the file and replaces `data`. theme and
-view-preset round-trip through the json. there's also an automatic
-`localStorage` autosave that's commented out / not implemented in this
-version — could be added in 20 lines.
+download. `load json` reads the file and replaces `data` via
+`applyLoadedData()`, which also restores theme, view preset, legend
+config, and camera and syncs every ui control that mirrors them.
+
+a `localStorage` autosave (key `tunnelmap_autosave`) writes the full
+state every 2s when it changed and is restored on next open through
+the same `applyLoadedData()` path. `reset all` clears it. `export png`
+rasterizes the current-mode svg at 2x through an img + canvas.
 
 ## the python reference
 
