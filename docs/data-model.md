@@ -10,7 +10,8 @@ same shape, and the python reference renderer consumes the same shape.
   planes:    Plane[],         // up to 6 horizontal layers, bottom to top
   lines:     Line[],          // each line is an ordered list of waypoints
   stations:  Station[],       // optional named markers
-  lifts:     Lift[],          // inter-plane connectors between two waypoints
+  lifts:     Lift[],          // connectors between two waypoints
+  notes:     Note[],          // free-floating text annotations
   title?:    string,          // big title rendered in svg top-left
   subtitle?: string,          // smaller subtitle under the title
   theme?:    string,          // 'cool' (default) | 'paper' | 'bone' |
@@ -107,11 +108,31 @@ one line to make it appear.
 {
   a: Waypoint,
   b: Waypoint,
+  kind?: 'standard' | 'elevator' | 'escalator' | 'stairs' | 'ramp',
+  name?: string,
 }
 ```
 
-both endpoints must live on different planes. rendered as a dashed grey
-connector across the z-gap.
+endpoints on different planes render as a dashed connector across the
+z-gap. endpoints on the same plane (but different cells) render the
+same way and read as a walking transfer between nearby stations.
+
+## Note
+
+```ts
+{
+  gx:    number,    // grid cell the text is centered on
+  gy:    number,
+  plane: number,
+  text:  string,
+  size?: number,    // font multiplier, default 1
+}
+```
+
+free-floating italic text for district names, hazard callouts, margin
+commentary. rendered in the editor as a zoom-scaled overlay and in the
+svg export in the theme's soft ink. station label placement treats
+note bounding boxes as obstacles.
 
 ## back-compat
 

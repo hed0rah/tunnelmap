@@ -48,6 +48,11 @@ or clone this repo and double-click `index.html`.
 - **auto-quadrant station labels** — places each name in the freest of
   eight directions around its marker, with collision avoidance against
   lines and other labels
+- **map notes** — free-floating italic annotations pinned to grid cells.
+  right-click an empty cell to add one; click edits, drag moves,
+  right-click sizes or deletes. exported in the theme's soft ink
+- **walking transfers** — lift mode also connects two same-plane
+  stations with a dashed transfer link
 - **multi-select** waypoints with marquee or shift-click. rotate 90°,
   mirror horizontally/vertically, straighten — operates on selection or
   active line
@@ -57,12 +62,16 @@ or clone this repo and double-click `index.html`.
 - **live svg preview** pane with view-angle and color-mode pickers
 - **json save/load** round-trips the full map state, the legend config,
   the theme, and the camera
+- **autosave** — the working map is kept in localStorage and restored
+  on next open. save json is still the durable path
+- **png export** — the current color mode rasterized at 2x, for places
+  svg won't paste
 
 ## drawing controls
 
 | action | keys / mouse |
 |---|---|
-| switch mode | `d` draw, `b` bend, `m` move, `x` delete, `l` lift, `s` select |
+| switch mode | `e` edit (default), `d` draw, `l` lift |
 | switch active plane | `1`–`6` or `[` / `]` for prev/next |
 | flip line direction | `tab` |
 | undo / redo | `cmd+z` / `cmd+shift+z` |
