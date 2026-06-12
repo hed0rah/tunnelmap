@@ -237,6 +237,14 @@ html, body { height: 100%; font-family: Inter, Helvetica, Arial, sans-serif;
   border: 1px solid var(--ui-border); white-space: nowrap;
   font-family: 'Space Grotesk', Inter, sans-serif; line-height: 1.4;
   transform: translate(-9999px, -9999px); /* offscreen until positioned */ }
+#note-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 35;
+  overflow: hidden; }
+.map-note { position: absolute; top: 0; left: 0; pointer-events: auto;
+  cursor: grab; color: var(--ink-soft); white-space: nowrap; line-height: 1.2;
+  font-family: 'Space Grotesk', Inter, sans-serif; font-style: italic;
+  font-weight: 500; user-select: none;
+  transform: translate(-9999px, -9999px); /* offscreen until positioned */ }
+.map-note:hover { text-decoration: underline dotted; }
 #hud { top: 14px; right: 14px; }
 #live-toggle, #labels-toggle { position: absolute; bottom: 14px;
   background: rgba(255,255,255,0.85); border: 1px solid var(--ui-border);
@@ -429,6 +437,7 @@ input[type=file] { display: none; }
 </aside>
 <main id="main">
 <div id="canvas-container"></div>
+<div id="note-overlay"></div>
 <div id="station-overlay"></div>
 <div id="hud"></div>
 <div id="flash"></div>
@@ -515,7 +524,7 @@ input[type=file] { display: none; }
       <table class="kb-table">
         <tr><td><span class="kb">e</span></td><td>edit (default) — click selects, drag moves, marquee on empty drag</td></tr>
         <tr><td><span class="kb">d</span></td><td>draw — click empty extends the active line</td></tr>
-        <tr><td><span class="kb">l</span></td><td>lift — two waypoint clicks build a cross-plane connector</td></tr>
+        <tr><td><span class="kb">l</span></td><td>lift — two waypoint clicks build a connector. cross-plane = lift, same plane = walking transfer</td></tr>
       </table>
 
       <h3>core gestures (any mode)</h3>
@@ -530,7 +539,15 @@ input[type=file] { display: none; }
         <tr><td>dbl-click tube</td><td>insert bend at cursor</td></tr>
         <tr><td>dbl-click empty</td><td>start new line here · enter draw</td></tr>
         <tr><td>right-click target</td><td>context menu for that thing</td></tr>
-        <tr><td>right-click empty</td><td>deselect everything</td></tr>
+        <tr><td>right-click empty</td><td>deselect everything + empty-cell menu (add note)</td></tr>
+      </table>
+
+      <h3>notes</h3>
+      <table class="kb-table">
+        <tr><td>right-click empty</td><td>add note here — free text pinned to that cell</td></tr>
+        <tr><td>click note</td><td>edit its text (empty deletes)</td></tr>
+        <tr><td>drag note</td><td>move it, across planes too</td></tr>
+        <tr><td>right-click note</td><td>size presets / delete</td></tr>
       </table>
 
       <h3>draw mode modifiers</h3>
@@ -559,7 +576,7 @@ input[type=file] { display: none; }
       <table class="kb-table">
         <tr><td><span class="kb">cmd+z</span></td><td>undo</td></tr>
         <tr><td><span class="kb">cmd+shift+z</span></td><td>redo</td></tr>
-        <tr><td><span class="kb">esc</span></td><td>cancel pending / close popover / clear selection / pop last waypoint</td></tr>
+        <tr><td><span class="kb">esc</span></td><td>cancel pending / close popover / pop last waypoint (draw) / clear selection</td></tr>
       </table>
 
       <h3>mouse</h3>
@@ -1631,7 +1648,10 @@ renderer.domElement.addEventListener('mousedown', (ev) => {
     else {
       const a = data.lines.find(l => l.id === liftPending.lineId).waypoints[liftPending.wpIndex];
       const b = data.lines.find(l => l.id === wp.lineId).waypoints[wp.wpIndex];
-      if (a.plane !== b.plane) data.lifts.push({ a: {...a}, b: {...b} });
+      // cross-plane = lift. same plane but different cells = walking
+      // transfer between nearby stations. same cell = no-op.
+      const sameCell = a.plane === b.plane && a.gx === b.gx && a.gy === b.gy;
+      if (!sameCell) data.lifts.push({ a: {...a}, b: {...b} });
       liftPending = null; rebuildAll();
     }
     ev.preventDefault();
@@ -1734,6 +1754,7 @@ function applySnapshot(s) {
   data.lines = r.lines;
   data.stations = r.stations || [];
   data.lifts = r.lifts || [];
+  data.notes = r.notes || [];
   // content fields only — theme/view/legend are presentation, leave them be.
   data.title = r.title || '';
   data.subtitle = r.subtitle || '';
@@ -1975,13 +1996,26 @@ renderer.domElement.addEventListener('contextmenu', (ev) => {
       return;
     }
   }
-  // empty plane: no menu. right-click on nothing = deselect everything.
-  // (start-new-line is double-click. switch-plane is single-click on a
-  // different plane's grid. context menus only appear for actual targets.)
+  // empty plane: deselect immediately (long-standing muscle memory), then
+  // offer the empty-cell actions. start-new-line stays on double-click;
+  // switch-plane stays on single-click.
   if (activeLineId || (selectedWaypoints && selectedWaypoints.length)) {
     activeLineId = null;
     selectedWaypoints = [];
     rebuildAll(); rebuildSelection();
+  }
+  const cell = pickAnyPlaneCell();
+  if (cell) {
+    const pn = data.planes[cell.plane] ? data.planes[cell.plane].name : cell.plane + 1;
+    ctxmenu.appendChild(ctxLabel(pn + ' / cell ' + cell.gx + ', ' + cell.gy));
+    ctxmenu.appendChild(ctxItem('add note here...', () => {
+      const t = prompt('note text', '');
+      if (t && t.trim()) {
+        data.notes.push({ gx: cell.gx, gy: cell.gy, plane: cell.plane, text: t.trim(), size: 1 });
+        refreshPreview();
+      }
+    }));
+    openCtx();
   }
 });
 // close ctxmenu on any outside interaction. mousedown handles immediate close,
@@ -1998,6 +2032,9 @@ window.addEventListener('click', maybeCloseCtxmenu, true);
 data.title = data.title || '';
 data.subtitle = data.subtitle || '';
 data.theme = data.theme || 'cool';
+// free-floating text annotations: { gx, gy, plane, text, size? }. district
+// names, hazard callouts, whatever the map needs said in its margins.
+data.notes = data.notes || [];
 // theme palettes: paper + plane tints used by the svg export. css variables
 // (above) handle the editor chrome; this table feeds the export.
 // plane tints are ordered BOTTOM (lowest z, plane 0) → TOP. they go darker →
@@ -3180,9 +3217,18 @@ function exportSvg(opts) {
     const titleH = (data.title ? 30 : 0) + (data.subtitle ? 20 : 0);
     titleObstacles.push({ x: tx - 4, y: ty - 30, w: titleW + 8, h: titleH + 8 });
   }
+  // note rects so station labels keep clear of annotations too.
+  const noteObstacles = [];
+  for (const nt of (data.notes || [])) {
+    if (!nt.text) continue;
+    const [nx, ny] = proj(nt.gx, nt.gy, nt.plane);
+    const nfs = 13 * (nt.size || 1);
+    const nw = nt.text.length * nfs * 0.58, nh = nfs * 1.2;
+    noteObstacles.push({ x: nx - nw / 2, y: ny - nh / 2, w: nw, h: nh });
+  }
   // seed the placedLabels with non-label obstacles so the scorer naturally
   // avoids them. labels get added on top as they're placed.
-  const placedLabels = [...terminusObstacles, ...legendObstacles, ...titleObstacles];
+  const placedLabels = [...terminusObstacles, ...legendObstacles, ...titleObstacles, ...noteObstacles];
   const pointToSegmentDist = (px, py, ax, ay, bx, by) => {
     const dx = bx - ax, dy = by - ay;
     const len2 = dx * dx + dy * dy;
@@ -3573,6 +3619,18 @@ function exportSvg(opts) {
         ln.name.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</text>');
     }
   }
+  // map notes: italic annotations anchored to grid cells. soft ink so they
+  // read as commentary on the map, not as stations.
+  for (const nt of (data.notes || [])) {
+    if (!nt.text) continue;
+    const [nx, ny] = proj(nt.gx, nt.gy, nt.plane);
+    const nfs = 13 * (nt.size || 1);
+    const noteColor = nocolor ? '#333333' : themeInkSoft;
+    const safe = nt.text.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    parts.push('<text x="' + nx.toFixed(1) + '" y="' + (ny + nfs * 0.35).toFixed(1) +
+      '" font-size="' + nfs.toFixed(1) + '" font-style="italic" font-weight="500" fill="' +
+      noteColor + '" text-anchor="middle">' + safe + '</text>');
+  }
   // title block. positioned in the top-left padding area. weight and size
   // match a print-zine header. opt-in via data.title and data.subtitle.
   if (data.title || data.subtitle) {
@@ -3700,7 +3758,7 @@ function resetView() {
 document.getElementById('reset').onclick = () => {
   if (!confirm('reset all data?')) return;
   data.planes = [{ name: 'Surface', z: 0, tint: data.theme && THEMES[data.theme] ? THEMES[data.theme].planeTints[0] : '#f0eadf' }];
-  data.lines = []; data.stations = []; data.lifts = [];
+  data.lines = []; data.stations = []; data.lifts = []; data.notes = [];
   data.title = ''; data.subtitle = '';
   if (titleInput) titleInput.value = '';
   if (subtitleInput) subtitleInput.value = '';
@@ -4067,6 +4125,104 @@ labelsToggleBtn.onclick = () => {
   updateStationOverlay();
 };
 
+// map-note overlay: always-on html labels for data.notes, projected to
+// screen each frame like station labels but scaled with camera zoom so
+// they behave as map content rather than ui. click = edit text, drag =
+// move (cross-plane via the raycast), right-click = size/delete menu.
+const noteOverlayEl = document.getElementById('note-overlay');
+const noteEls = [];
+let notePress = null; // { idx, x, y, dragged }
+function buildNoteEl() {
+  const el = document.createElement('div');
+  el.className = 'map-note';
+  el.addEventListener('mousedown', (ev) => {
+    if (ev.button !== 0) return;
+    ev.preventDefault(); ev.stopPropagation();
+    notePress = { idx: el.__noteIdx, x: ev.clientX, y: ev.clientY, dragged: false };
+  });
+  el.addEventListener('contextmenu', (ev) => {
+    ev.preventDefault(); ev.stopPropagation();
+    const idx = el.__noteIdx;
+    const nt = (data.notes || [])[idx];
+    if (!nt) return;
+    closeCtxmenu();
+    const main = document.getElementById('main').getBoundingClientRect();
+    ctxmenu.style.left = (ev.clientX - main.left) + 'px';
+    ctxmenu.style.top = (ev.clientY - main.top) + 'px';
+    ctxmenu.appendChild(ctxLabel('note / plane ' + (nt.plane + 1)));
+    ctxmenu.appendChild(ctxItem('edit text...', () => {
+      const t = prompt('note text (empty deletes)', nt.text);
+      if (t == null) return;
+      if (t.trim()) nt.text = t.trim();
+      else data.notes.splice(idx, 1);
+      refreshPreview();
+    }));
+    const curSize = nt.size || 1;
+    ctxmenu.appendChild(ctxLabel('size: ' + curSize + 'x'));
+    for (const [label, s] of [['small', 0.7], ['normal', 1], ['large', 1.6], ['huge', 2.4]]) {
+      if (s === curSize) continue;
+      ctxmenu.appendChild(ctxItem('  → ' + label, () => { nt.size = s; refreshPreview(); }));
+    }
+    ctxmenu.appendChild(ctxSep());
+    ctxmenu.appendChild(ctxItem('delete note', () => {
+      data.notes.splice(idx, 1); refreshPreview();
+    }, 'danger'));
+    ctxmenu.classList.add('open');
+  });
+  noteOverlayEl.appendChild(el);
+  return el;
+}
+window.addEventListener('mousemove', (ev) => {
+  if (!notePress) return;
+  if (!notePress.dragged &&
+      Math.hypot(ev.clientX - notePress.x, ev.clientY - notePress.y) > 4) {
+    notePress.dragged = true;
+  }
+  if (notePress.dragged) {
+    setMouse(ev); raycaster.setFromCamera(mouse, camera);
+    const cell = pickAnyPlaneCell();
+    const nt = (data.notes || [])[notePress.idx];
+    if (cell && nt) { nt.gx = cell.gx; nt.gy = cell.gy; nt.plane = cell.plane; }
+  }
+});
+window.addEventListener('mouseup', () => {
+  if (!notePress) return;
+  const nt = (data.notes || [])[notePress.idx];
+  if (!notePress.dragged && nt) {
+    const t = prompt('note text (empty deletes)', nt.text);
+    if (t != null) {
+      if (t.trim()) nt.text = t.trim();
+      else data.notes.splice(notePress.idx, 1);
+      refreshPreview();
+    }
+  }
+  notePress = null;
+});
+function updateNoteOverlay() {
+  if (!noteOverlayEl) return;
+  const notes = data.notes || [];
+  while (noteEls.length > notes.length) noteEls.pop().remove();
+  while (noteEls.length < notes.length) noteEls.push(buildNoteEl());
+  if (!notes.length) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  const main = document.getElementById('main').getBoundingClientRect();
+  const offX = rect.left - main.left, offY = rect.top - main.top;
+  for (let i = 0; i < notes.length; i++) {
+    const nt = notes[i], el = noteEls[i];
+    el.__noteIdx = i;
+    if (planeHidden(nt.plane)) { el.style.display = 'none'; continue; }
+    el.style.display = '';
+    if (el.textContent !== nt.text) el.textContent = nt.text;
+    const world = wpToWorld({ gx: nt.gx, gy: nt.gy, plane: nt.plane });
+    const ndc = world.clone().project(camera);
+    const sx = (ndc.x * 0.5 + 0.5) * rect.width;
+    const sy = (-ndc.y * 0.5 + 0.5) * rect.height;
+    el.style.fontSize = Math.max(7, 14 * (nt.size || 1) * camera.zoom).toFixed(1) + 'px';
+    el.style.transform = 'translate(' + (offX + sx).toFixed(1) + 'px,' +
+      (offY + sy).toFixed(1) + 'px) translate(-50%,-50%)';
+  }
+}
+
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
@@ -4074,6 +4230,7 @@ function animate() {
   rebuildSelection();
   updateHud();
   if (showStationLabels) updateStationOverlay();
+  updateNoteOverlay();
   renderer.render(scene, camera);
 }
 
