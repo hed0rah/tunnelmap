@@ -420,6 +420,7 @@ input[type=file] { display: none; }
 <button class="btn" id="toggle-preview" style="width:100%">live preview</button>
 <button class="btn" id="reset-view" style="width:100%;margin-top:4px">reset view</button>
 <button class="btn" id="export" style="width:100%;margin-top:4px">export svg</button>
+<button class="btn" id="export-png" style="width:100%;margin-top:4px">export png</button>
 <button class="btn" id="save" style="width:100%;margin-top:4px">save json</button>
 <label class="btn" for="load-input" style="width:100%;margin-top:4px;display:block;text-align:center">load json</label>
 <input type="file" id="load-input" accept=".json">
@@ -3707,6 +3708,7 @@ document.getElementById('reset').onclick = () => {
   selectedWaypoints = [];
   closePopover();
   resetView();
+  try { localStorage.removeItem(AUTOSAVE_KEY); } catch (e) {}
   rebuildAll();
   refreshPreview();
 };
@@ -3743,6 +3745,36 @@ document.getElementById('export').onclick = () => {
   a.download = 'transit_map' + suffix + '.svg';
   a.click();
   URL.revokeObjectURL(url);
+};
+// png export: rasterize the svg through an <img> + canvas at 2x. handy for
+// chat/forum drops where svg won't inline. font falls back to system sans
+// since svg-as-image can't fetch webfonts; the exported svg never embedded
+// them anyway.
+document.getElementById('export-png').onclick = () => {
+  const svg = exportSvg({ mode: bwMode });
+  if (!svg) return;
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  const img = new Image();
+  img.onload = () => {
+    const scale = 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+    canvas.toBlob((blob) => {
+      if (!blob) { alert('png encode failed'); return; }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      const suffix = bwMode === 'mono' ? '_bw' : bwMode === 'grey' ? '_grey' : '';
+      a.download = 'transit_map' + suffix + '.png';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }, 'image/png');
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); alert('png render failed'); };
+  img.src = url;
 };
 document.getElementById('save').onclick = () => {
   // snapshot camera state alongside the data so reopening lands at the
@@ -3815,6 +3847,27 @@ document.getElementById('load-input').addEventListener('change', (ev) => {
   };
   r.readAsText(f);
 });
+
+// localStorage autosave. best-effort crash safety: written whenever the data
+// changes (2s cadence), restored on next open. explicit save json stays the
+// durable path. camera rides along in the payload but is excluded from the
+// change check so panning alone doesn't churn writes.
+const AUTOSAVE_KEY = 'tunnelmap_autosave';
+let lastAutosaveData = '';
+setInterval(() => {
+  try {
+    const cur = JSON.stringify(data);
+    if (cur === lastAutosaveData) return;
+    lastAutosaveData = cur;
+    const payload = JSON.parse(cur);
+    payload.camera = {
+      pos: [camera.position.x, camera.position.y, camera.position.z],
+      target: [controls.target.x, controls.target.y, controls.target.z],
+      zoom: camera.zoom,
+    };
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(payload));
+  } catch (e) { /* storage full or unavailable — autosave is best-effort */ }
+}, 2000);
 
 // live preview pane
 const previewPane = document.getElementById('preview-pane');
@@ -4024,6 +4077,16 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+// pick up where the last session left off. fresh visitors still get the
+// showcase fixture; a corrupt autosave falls back to it too.
+try {
+  const saved = localStorage.getItem(AUTOSAVE_KEY);
+  if (saved) {
+    applyLoadedData(JSON.parse(saved));
+    lastAutosaveData = JSON.stringify(data);
+    flash('autosave restored');
+  }
+} catch (e) { /* unreadable autosave — keep the showcase */ }
 for (const ln of data.lines) noteRecentColor(ln.color);
 rebuildAll();
 applyResize();
