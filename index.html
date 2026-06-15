@@ -411,7 +411,11 @@ input[type=file] { display: none; }
 <input type="file" id="refimg-input" accept="image/*">
 <div class="row" style="gap:3px;margin-top:4px">
   <button class="btn tiny" id="refimg-visible" style="flex:1;text-align:center">visible</button>
-  <button class="btn tiny" id="refimg-active" style="flex:1;text-align:center" title="arrow keys nudge image when active">nudge mode</button>
+  <button class="btn tiny" id="refimg-active" style="flex:1;text-align:center" title="when on: arrows nudge (shift coarse, alt fine), [ ] rotate, - = scale">nudge mode</button>
+</div>
+<div class="row" style="gap:3px;margin-top:4px">
+  <button class="btn tiny" id="refimg-flipx" style="flex:1;text-align:center">flip h</button>
+  <button class="btn tiny" id="refimg-flipy" style="flex:1;text-align:center">flip v</button>
 </div>
 <label style="font-size:10px;color:var(--ink-mute);display:block;margin-top:6px">opacity <span id="refimg-opacity-r" style="font-family:monospace"></span></label>
 <input type="range" id="refimg-opacity" min="0.05" max="1" step="0.05" value="0.6" style="width:100%">
@@ -758,6 +762,8 @@ const refImage = {
   offsetX: 0,
   offsetY: 0,
   rotation: 0,      // radians, around world Y
+  flipX: false,     // mirror horizontally (image space)
+  flipY: false,     // mirror vertically (image space)
 };
 
 const scene = new THREE.Scene();
@@ -816,10 +822,15 @@ scene.add(refImageGroup, planeGroup, linesGroup, stationsGroup, liftsGroup, edit
 function clearGroup(g) { while (g.children.length) g.remove(g.children[0]); }
 
 // rebuild the reference-image plane from refImage state. cheap; called on
-// any control change. mesh sits at y=-0.1 so it reads through plane 0's
-// translucent fill without z-fighting. disposes the prior geometry+material
-// every call — slider drags fire this dozens of times per second and would
-// otherwise leak GPU resources.
+// any control change. the mesh renders as a pure background underlay:
+// renderOrder -1 draws it before everything, and depthTest/depthWrite off
+// keep it out of the depth buffer entirely. without this it's just another
+// translucent object in the transparent sort, so nudging the (huge) image
+// flips its draw order past each stacked plane one by one — the bottom-up
+// "planes go white" bug. as a background layer the translucent planes simply
+// composite on top, which is exactly the tracing behavior we want.
+// disposes the prior geometry+material every call — slider drags fire this
+// dozens of times per second and would otherwise leak GPU resources.
 function disposeRefImageGroup() {
   refImageGroup.traverse((o) => {
     if (o.isMesh) {
@@ -837,10 +848,13 @@ function rebuildRefImage() {
   const h = refImage.scale, w = h * ar;
   const mat = new THREE.MeshBasicMaterial({
     map: refImage.texture, transparent: true, opacity: refImage.opacity,
-    side: THREE.DoubleSide, depthWrite: false,
+    side: THREE.DoubleSide, depthWrite: false, depthTest: false,
   });
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
   mesh.rotation.x = -Math.PI / 2;
+  // mirror in image space. negative scale flips winding, handled by DoubleSide.
+  mesh.scale.set(refImage.flipX ? -1 : 1, refImage.flipY ? -1 : 1, 1);
+  mesh.renderOrder = -1;
   // wrap so we can rotate around world Y without fighting the X-flatten.
   const wrap = new THREE.Group();
   wrap.add(mesh);
@@ -2350,18 +2364,39 @@ window.addEventListener('keydown', (ev) => {
     selectedWaypoints = [];
     rebuildAll(); rebuildSelection();
   }
-  // when refImage nudge-mode is on, arrows move the reference image instead
-  // of any selected waypoints. preempts the waypoint-nudge branch below.
-  if (refImage.active && refImage.texture && (ev.key === 'ArrowLeft' ||
-      ev.key === 'ArrowRight' || ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) {
-    ev.preventDefault();
-    const step = ev.shiftKey ? 1 : 0.25;
-    if (ev.key === 'ArrowLeft')  refImage.offsetX -= step;
-    if (ev.key === 'ArrowRight') refImage.offsetX += step;
-    if (ev.key === 'ArrowUp')    refImage.offsetY -= step;
-    if (ev.key === 'ArrowDown')  refImage.offsetY += step;
-    refImgUpdateUi(); rebuildRefImage();
-    return;
+  // when refImage nudge-mode is on, the keyboard drives the image transform
+  // instead of any selected waypoints. preempts the waypoint-nudge branch below.
+  // arrows translate (shift = 1u coarse, alt = 0.05u fine, default 0.25u);
+  // [ / ] rotate (shift = 15 deg); - / = scale.
+  if (refImage.active && refImage.texture) {
+    const isArrow = ev.key === 'ArrowLeft' || ev.key === 'ArrowRight' ||
+      ev.key === 'ArrowUp' || ev.key === 'ArrowDown';
+    if (isArrow) {
+      ev.preventDefault();
+      const step = ev.shiftKey ? 1 : (ev.altKey ? 0.05 : 0.25);
+      if (ev.key === 'ArrowLeft')  refImage.offsetX -= step;
+      if (ev.key === 'ArrowRight') refImage.offsetX += step;
+      if (ev.key === 'ArrowUp')    refImage.offsetY -= step;
+      if (ev.key === 'ArrowDown')  refImage.offsetY += step;
+      refImgUpdateUi(); rebuildRefImage();
+      return;
+    }
+    if (ev.key === '[' || ev.key === ']') {
+      ev.preventDefault();
+      const deg = (ev.key === ']' ? 1 : -1) * (ev.shiftKey ? 15 : 1);
+      let r = refImage.rotation * 180 / Math.PI + deg;
+      r = ((r + 180) % 360 + 360) % 360 - 180;   // wrap to (-180, 180]
+      refImage.rotation = r * Math.PI / 180;
+      refImgUpdateUi(); rebuildRefImage();
+      return;
+    }
+    if (ev.key === '-' || ev.key === '=' || ev.key === '+') {
+      ev.preventDefault();
+      const d = (ev.key === '-' ? -1 : 1) * (ev.shiftKey ? 2 : 0.5);
+      refImage.scale = Math.min(80, Math.max(2, refImage.scale + d));
+      refImgUpdateUi(); rebuildRefImage();
+      return;
+    }
   }
   // arrow keys nudge the selected waypoint(s). shift = 5-unit jump. axes
   // are in grid space; left/right move gx, up/down move gy. gy is "north"
@@ -4032,6 +4067,8 @@ const refImgOpacity    = document.getElementById('refimg-opacity');
 const refImgScale      = document.getElementById('refimg-scale');
 const refImgRot        = document.getElementById('refimg-rot');
 const refImgRecenter   = document.getElementById('refimg-recenter');
+const refImgFlipXBtn   = document.getElementById('refimg-flipx');
+const refImgFlipYBtn   = document.getElementById('refimg-flipy');
 const refImgOpacityR   = document.getElementById('refimg-opacity-r');
 const refImgScaleR     = document.getElementById('refimg-scale-r');
 const refImgRotR       = document.getElementById('refimg-rot-r');
@@ -4040,6 +4077,8 @@ const refImgPosR       = document.getElementById('refimg-pos-r');
 function refImgUpdateUi() {
   refImgVisibleBtn.classList.toggle('active', refImage.visible);
   refImgActiveBtn.classList.toggle('active', refImage.active);
+  refImgFlipXBtn.classList.toggle('active', refImage.flipX);
+  refImgFlipYBtn.classList.toggle('active', refImage.flipY);
   refImgOpacityR.textContent = refImage.opacity.toFixed(2);
   refImgScaleR.textContent = refImage.scale.toFixed(1);
   refImgRotR.textContent = (refImage.rotation * 180 / Math.PI).toFixed(0) + '°';
@@ -4075,6 +4114,7 @@ refImgClearBtn.onclick = () => {
   refImage.texture = null;
   refImage.active = false;
   refImage.offsetX = 0; refImage.offsetY = 0; refImage.rotation = 0;
+  refImage.flipX = false; refImage.flipY = false;
   refImgUpdateUi(); rebuildRefImage();
 };
 refImgVisibleBtn.onclick = () => {
@@ -4089,9 +4129,11 @@ refImgOpacity.oninput = () => { refImage.opacity = parseFloat(refImgOpacity.valu
 refImgScale.oninput   = () => { refImage.scale   = parseFloat(refImgScale.value);   refImgUpdateUi(); rebuildRefImage(); };
 refImgRot.oninput     = () => { refImage.rotation = parseFloat(refImgRot.value) * Math.PI / 180; refImgUpdateUi(); rebuildRefImage(); };
 refImgRecenter.onclick = () => {
-  refImage.offsetX = 0; refImage.offsetY = 0;
+  refImage.offsetX = 0; refImage.offsetY = 0; refImage.rotation = 0;
   refImgUpdateUi(); rebuildRefImage();
 };
+refImgFlipXBtn.onclick = () => { refImage.flipX = !refImage.flipX; refImgUpdateUi(); rebuildRefImage(); };
+refImgFlipYBtn.onclick = () => { refImage.flipY = !refImage.flipY; refImgUpdateUi(); rebuildRefImage(); };
 refImgUpdateUi();
 
 // live preview pane
