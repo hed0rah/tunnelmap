@@ -2679,7 +2679,21 @@ function openPopover(gx, gy, plane, lineId, wpIndex) {
 function closePopover() {
   popoverState.open = false;
   popover.classList.remove('open');
+  // return focus to the document so window-level hotkeys (Delete, Escape,
+  // mode keys) fire again — while a popover field held focus they were
+  // swallowed by the INPUT/TEXTAREA/SELECT guard in the keydown handler.
+  if (document.activeElement && popover.contains(document.activeElement)) {
+    document.activeElement.blur();
+  }
 }
+// the global keydown handler bails when a form field is focused, so the
+// popover's own fields would otherwise trap Escape/Enter. handle them here.
+popover.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' || ev.key === 'Enter') {
+    ev.preventDefault(); ev.stopPropagation();
+    closePopover();
+  }
+});
 function positionPopover() {
   if (!popoverState.open) return;
   const wp = { gx: popoverState.gx, gy: popoverState.gy, plane: popoverState.plane };
@@ -2829,7 +2843,10 @@ window.addEventListener('mouseup', (ev) => {
           else selectedWaypoints.push({ lineId: ln.id, wpIndex: wp.wpIndex });
           rebuildAll(); rebuildSelection();
         } else {
-          openPopover(w.gx, w.gy, w.plane, ln.id, wp.wpIndex);
+          // single-click selects only — it no longer opens the station
+          // popover. that lets Backspace/Delete remove the node immediately
+          // (an open popover focuses the name field and swallows the key).
+          // double-click, or right-click > open station info, opens the popover.
           selectedWaypoints = [{ lineId: ln.id, wpIndex: wp.wpIndex }];
           rebuildAll(); rebuildSelection();
         }
